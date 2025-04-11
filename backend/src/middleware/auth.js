@@ -5,12 +5,14 @@ const ResponseHandler = require('../utils/ResponseHandler');
 const logger = require('../utils/logger');
 
 // Define available roles
-const ROLES = {
-    ADMIN: 'admin',
-    MANAGER: 'manager',
-    CUSTOMER: 'customer',
-    STAFF: 'staff'
-};
+// const ROLES = {
+//     ADMIN: 'admin',
+//     MANAGER: 'manager',
+//     CUSTOMER: 'customer',
+//     STAFF: 'staff'
+// };
+const ROLES = { ...config.ROLES };
+
 
 /**
  * Authentication middleware to verify JWT token and attach user to request

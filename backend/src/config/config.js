@@ -51,6 +51,13 @@ module.exports = {
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
     webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
   },
+  ROLES:{
+    ADMIN: 'admin', // admin
+    CUSTOMER: 'customer', // customer
+    USER:'user', // business user 
+    MANAGER: 'manager', // infuture may be 
+    STAFF: 'staff' // infuture may be 
+  } 
   //databaseUrl: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/invoice_system'
 }
 

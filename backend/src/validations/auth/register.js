@@ -1,25 +1,15 @@
 const Joi = require('joi');
 
 const registerSchema = Joi.object({
-    firstName: Joi.string()
+    name: Joi.string()
         .required()
         .min(2)
         .max(50)
         .messages({
-            'string.empty': 'First name is required',
-            'string.min': 'First name must be at least 2 characters long',
-            'string.max': 'First name cannot exceed 50 characters',
-            'any.required': 'First name is required'
-        }),
-    lastName: Joi.string()
-        .required()
-        .min(2)
-        .max(50)
-        .messages({
-            'string.empty': 'Last name is required',
-            'string.min': 'Last name must be at least 2 characters long',
-            'string.max': 'Last name cannot exceed 50 characters',
-            'any.required': 'Last name is required'
+            'string.empty': 'Name is required',
+            'string.min': 'Name must be at least 2 characters long',
+            'string.max': 'Name cannot exceed 50 characters',
+            'any.required': 'Name is required'
         }),
     email: Joi.string()
         .email()
@@ -52,7 +42,17 @@ const registerSchema = Joi.object({
         .default('user')
         .messages({
             'any.only': 'Role must be one of: user, admin, customer'
-        })
+        }),
+    phone: Joi.string()
+        .length(10)
+        // .pattern(/[6-9]{1}[0-9]{9}/)
+        .required()
+        .messages({
+            "any.required": "Phone number is required.",
+            "string.empty": "Phone number cannot be empty.",
+            "string.length": "Phone number must be exactly 10 digits long.",
+            // "string.pattern.base": "Phone number is invalid.",
+        }),
 });
 
 module.exports = registerSchema; 

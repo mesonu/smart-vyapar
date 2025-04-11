@@ -1,10 +1,12 @@
 const ResponseHandler = require('../utils/ResponseHandler');
 const { logger } = require('../utils/logger');
+const config = require('../config/config');
 
 class BaseController {
   constructor(model) {
     this.model = model;
     this.ResponseHandler = ResponseHandler;
+    this.config = config;
   }
 
   async handleError(error, res) {

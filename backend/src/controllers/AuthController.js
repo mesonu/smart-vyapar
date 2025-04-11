@@ -13,13 +13,15 @@ class AuthController extends BaseController {
   register = async (req, res) => {
     try {
       const {
-        username,
+        name,
         email,
         password,
-        role = 'customer',
-        firstName,
-        lastName,
-        phone
+        role,
+        phone,
+        businessName,
+        businessType,
+        gstNumber,
+        address
       } = req.body;
 
       // Check if user already exists
@@ -27,7 +29,7 @@ class AuthController extends BaseController {
         where: {
           [Op.or]: [
             { email },
-            { username }
+            { phone }
           ]
         }
       });
@@ -35,7 +37,7 @@ class AuthController extends BaseController {
       if (existingUser) {
         return this.ResponseHandler.conflict(
           res,
-          'User with this email or username already exists'
+          'User with this email or phone already exists'
         );
       }
 
@@ -44,13 +46,15 @@ class AuthController extends BaseController {
 
       // Create user
       const user = await User.create({
-        username,
+        name,
         email,
         password: hashedPassword,
         role,
-        firstName,
-        lastName,
-        phone
+        phone,
+        businessName,
+        businessType,
+        gstNumber,
+        address
       });
 
       // Generate token
@@ -134,11 +138,13 @@ class AuthController extends BaseController {
       }
 
       // Generate reset token
-      const resetToken = jwt.sign(
-        { id: user.id, type: 'reset' },
-        process.env.JWT_SECRET,
-        { expiresIn: '1h' }
-      );
+      // const resetToken = jwt.sign(
+      //   { id: user.id, type: 'reset' },
+      //   process.env.JWT_SECRET,
+      //   { expiresIn: '1h' }
+      // );
+
+      const resetToken =  this.generateToken(user);
 
       // TODO: Send reset email with token
       // For now, we'll just return the token
@@ -224,28 +230,31 @@ class AuthController extends BaseController {
   };
 
   generateToken = (user) => {
+    const {secret, expiresIn} = this.config.jwt;
     return jwt.sign(
       {
         id: user.id,
         email: user.email,
         role: user.role
       },
-      process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      secret,
+      { expiresIn: expiresIn }
     );
   };
 
   sanitizeUser = (user) => {
     return {
       id: user.id,
-      username: user.username,
+      name: user.name,
       email: user.email,
       role: user.role,
-      firstName: user.firstName,
-      lastName: user.lastName,
       phone: user.phone,
-      createdAt: user.createdAt,
-      updatedAt: user.updatedAt
+      businessName: user?.businessName,
+      businessType: user?.businessType,
+      gstNumber: user?.gstNumber,
+      address: user.address,
+      created_at: user.created_at,
+      updated_at: user.updated_at
     };
   };
 }

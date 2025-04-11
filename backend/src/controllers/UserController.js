@@ -43,6 +43,7 @@ class UserController extends BaseController {
 
   login = async (req, res) => {
     try {
+      const {secret, expiresIn} = this.config.jwt;
       const { email, password } = req.body;
       const user = await User.findOne({ where: { email } });
 
@@ -57,8 +58,8 @@ class UserController extends BaseController {
 
       const token = jwt.sign(
         { id: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: '24h' }
+        secret,
+        { expiresIn: expiresIn }
       );
 
       logger.info('User logged in successfully', { userId: user.id });
