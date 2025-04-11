@@ -22,19 +22,19 @@ const logError = (err, req) => {
     method: req.method,
     statusCode: err.statusCode || 500,
     error: {
-      name: err.name,
-      message: err.message,
-      stack: err.stack
+      name: err?.name,
+      message: err?.message,
+      stack: err?.stack
     },
-    context: err.context || {},
-    user: req.user ? {
-      id: req.user.id,
-      email: req.user.email,
-      role: req.user.role
+    context: err?.context || {},
+    user: req?.user ? {
+      id: req?.user?.id,
+      email: req?.user?.email,
+      role: req?.user?.role
     } : null,
-    body: req.body,
-    query: req.query,
-    params: req.params
+    body: req?.body,
+    query: req?.query,
+    params: req?.params
   };
 
   if (err.statusCode >= 500) {

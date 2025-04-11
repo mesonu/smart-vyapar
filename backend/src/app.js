@@ -1,4 +1,5 @@
 const express = require('express');
+const crypto = require('crypto');
 const cors = require('cors');
 const helmet = require('helmet');
 const morgan = require('morgan');
@@ -23,19 +24,30 @@ const paymentRoutes = require('./routes/paymentRoutes');
 
 const app = express();
 
-// Compression middleware
-app.use(compression({
-  level: 6, // Compression level (0-9)
-  threshold: 0, // Compress all responses
-  filter: (req, res) => {
-    if (req.headers['x-no-compression']) {
-      return false;
-    }
-    return compression.filter(req, res);
-  }
+// 1. Basic middleware (should be first)
+
+// Logging middleware with better formatting
+app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"', { 
+  stream: { 
+    write: message => logger.info(message.trim()) 
+  },
+  skip: (req, res) => res.statusCode >= 400
 }));
 
-// Security middleware
+// Body parsing middleware with size limits
+app.use(express.json({ 
+  limit: '10kb',
+  verify: (req, res, buf) => {
+    req.rawBody = buf.toString();
+  }
+}));
+app.use(express.urlencoded({ 
+  extended: true, 
+  limit: '10kb',
+  parameterLimit: 1000
+}));
+
+// 2. Security middleware
 app.use(helmet({
   contentSecurityPolicy: {
     directives: {
@@ -76,19 +88,7 @@ app.use(cors({
   maxAge: 86400 // 24 hours
 }));
 
-// Body parsing middleware with size limits
-app.use(express.json({ 
-  limit: '10kb',
-  verify: (req, res, buf) => {
-    req.rawBody = buf.toString();
-  }
-}));
-app.use(express.urlencoded({ 
-  extended: true, 
-  limit: '10kb',
-  parameterLimit: 1000
-}));
-
+// 3. Rate limiting
 // Rate limiting with different limits for different routes
 const apiLimiter = rateLimit({
   windowMs: 15 * 60 * 1000, // 15 minutes
@@ -110,7 +110,34 @@ const authLimiter = rateLimit({
   }
 });
 
-// Apply rate limiting
+// Request ID middleware (moved before routes)
+app.use((req, res, next) => {
+  req.id = crypto.randomUUID();
+  res.setHeader('X-Request-ID', req.id);
+  next();
+});
+
+//4.Compression middleware
+app.use(compression({
+  level: 6, // Compression level (0-9)
+  threshold: 0, // Compress all responses
+  filter: (req, res) => {
+    if (req.headers['x-no-compression']) {
+      return false;
+    }
+    return compression.filter(req, res);
+  }
+}));
+
+// 5. Swagger documentation UI (should be before routes but after basic middleware)
+app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
+  explorer: true,
+  customCss: '.swagger-ui .topbar { display: none }',
+  customSiteTitle: "SmartVyapar API Documentation"
+}));
+
+// 6. Routes
+// Apply rate limiting to auth routes
 app.use('/api/auth/login', authLimiter);
 app.use('/api/auth/register', authLimiter);
 app.use('/api/auth/forgot-password', authLimiter);
@@ -124,28 +151,6 @@ app.use((req, res, next) => {
     apiLimiter(req, res, next);
   }
 });
-
-// Logging middleware with better formatting
-app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"', { 
-  stream: { 
-    write: message => logger.info(message.trim()) 
-  },
-  skip: (req, res) => res.statusCode >= 400
-}));
-
-// Request ID middleware
-app.use((req, res, next) => {
-  req.id = crypto.randomUUID();
-  res.setHeader('X-Request-ID', req.id);
-  next();
-});
-
-// Swagger documentation
-app.use('/api-docs', swaggerUi.serve, swaggerUi.setup(swaggerSpec, {
-  explorer: true,
-  customCss: '.swagger-ui .topbar { display: none }',
-  customSiteTitle: "SmartVyapar API Documentation"
-}));
 
 // Public routes
 app.use('/api/auth', userRoutes);
@@ -161,9 +166,6 @@ app.use('/api/payments', auth, paymentRoutes);
 // app.use('/api/reviews', auth, reviewRoutes);
 // app.use('/api/webhooks', webhookRoutes);
 
-// Error handling
-app.use(errorHandler);
-
 // 404 handler
 app.use((req, res) => {
   logger.warn(`404 Not Found: ${req.method} ${req.originalUrl} - Request ID: ${req.id}`);
@@ -177,5 +179,8 @@ app.use((req, res) => {
     }
   });
 });
+
+// Error handling
+app.use(errorHandler);
 
 module.exports = app; 
