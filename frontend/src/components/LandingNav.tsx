@@ -1,78 +1,125 @@
 import React, { useState } from 'react';
 import {
   AppBar,
+  Box,
   Toolbar,
   Typography,
   Button,
-  Box,
+  Container,
   IconButton,
   Drawer,
   List,
   ListItem,
   ListItemText,
+  Menu,
+  MenuItem,
   useTheme,
   useMediaQuery,
+  Stack,
 } from '@mui/material';
-import MenuIcon from '@mui/icons-material/Menu';
+import {
+  Menu as MenuIcon,
+  KeyboardArrowDown as KeyboardArrowDownIcon,
+} from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 
-const LandingNav: React.FC = () => {
+const LandingNav = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down('md'));
-  const [mobileOpen, setMobileOpen] = useState(false);
   const navigate = useNavigate();
+  const [mobileOpen, setMobileOpen] = useState(false);
+  const [servicesAnchorEl, setServicesAnchorEl] = useState<null | HTMLElement>(null);
+
+  const handleServicesClick = (event: React.MouseEvent<HTMLElement>) => {
+    setServicesAnchorEl(event.currentTarget);
+  };
+
+  const handleServicesClose = () => {
+    setServicesAnchorEl(null);
+  };
 
   const handleDrawerToggle = () => {
     setMobileOpen(!mobileOpen);
   };
 
-  const menuItems = [
-    { text: 'Features', href: '#features' },
-    { text: 'Pricing', href: '#pricing' },
-    { text: 'Contact', href: '#contact' },
+  const services = [
+    { title: 'Inventory Management', path: '/services/inventory' },
+    { title: 'Billing & Invoicing', path: '/services/billing' },
+    { title: 'Analytics & Reports', path: '/services/analytics' },
+    { title: 'Customer Management', path: '/services/customer' },
+    { title: 'GST Compliance', path: '/services/gst' },
+  ];
+
+  const navigationItems = [
+    { title: 'About Us', path: '/about' },
+    { title: 'Services', path: '#', hasDropdown: true },
+    { title: 'Pricing', path: '/pricing' },
+    { title: 'Contact', path: '/contact' },
   ];
 
   const drawer = (
-    <Box onClick={handleDrawerToggle} sx={{ textAlign: 'center' }}>
+    <Box sx={{ p: 2 }}>
       <List>
-        {menuItems.map((item) => (
-          <ListItem
-            key={item.text}
-            button
-            component="a"
-            href={item.href}
-            sx={{ textAlign: 'center' }}
-          >
-            <ListItemText primary={item.text} />
-          </ListItem>
+        {navigationItems.map((item) => (
+          <React.Fragment key={item.title}>
+            <ListItem 
+              button 
+              onClick={() => {
+                if (!item.hasDropdown) {
+                  navigate(item.path);
+                  setMobileOpen(false);
+                }
+              }}
+            >
+              <ListItemText primary={item.title} />
+            </ListItem>
+            {item.hasDropdown && services.map((service) => (
+              <ListItem 
+                button 
+                key={service.title}
+                sx={{ pl: 4 }}
+                onClick={() => {
+                  navigate(service.path);
+                  setMobileOpen(false);
+                }}
+              >
+                <ListItemText primary={service.title} />
+              </ListItem>
+            ))}
+          </React.Fragment>
         ))}
-        <ListItem>
-          <Button
-            variant="contained"
-            color="primary"
-            fullWidth
-            onClick={() => navigate('/login')}
-          >
-            Login
-          </Button>
-        </ListItem>
       </List>
     </Box>
   );
 
   return (
-    <AppBar position="sticky" color="default" elevation={1}>
-      <Toolbar>
-        <Typography
-          variant="h6"
-          component="div"
-          sx={{ flexGrow: 1, fontWeight: 'bold' }}
-        >
-          SmartShop
-        </Typography>
+    <AppBar 
+      position="sticky" 
+      color="inherit" 
+      elevation={0}
+      sx={{ 
+        borderBottom: '1px solid',
+        borderColor: 'divider',
+        bgcolor: 'background.paper',
+      }}
+    >
+      <Container maxWidth="lg">
+        <Toolbar disableGutters>
+          <Typography
+            variant="h6"
+            component="div"
+            sx={{
+              flexGrow: 1,
+              fontWeight: 700,
+              color: 'primary.main',
+              cursor: 'pointer',
+            }}
+            onClick={() => navigate('/')}
+          >
+            SmartShop
+          </Typography>
 
-        {isMobile ? (
-          <>
+          {isMobile ? (
             <IconButton
               color="inherit"
               aria-label="open drawer"
@@ -81,40 +128,78 @@ const LandingNav: React.FC = () => {
             >
               <MenuIcon />
             </IconButton>
-            <Drawer
-              variant="temporary"
-              anchor="right"
-              open={mobileOpen}
-              onClose={handleDrawerToggle}
-              ModalProps={{
-                keepMounted: true, // Better open performance on mobile.
-              }}
-            >
-              {drawer}
-            </Drawer>
-          </>
-        ) : (
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-            {menuItems.map((item) => (
+          ) : (
+            <Stack direction="row" spacing={1} alignItems="center">
+              {navigationItems.map((item) => (
+                <Box key={item.title}>
+                  {item.hasDropdown ? (
+                    <>
+                      <Button
+                        color="inherit"
+                        onClick={handleServicesClick}
+                        endIcon={<KeyboardArrowDownIcon />}
+                      >
+                        {item.title}
+                      </Button>
+                      <Menu
+                        anchorEl={servicesAnchorEl}
+                        open={Boolean(servicesAnchorEl)}
+                        onClose={handleServicesClose}
+                        MenuListProps={{
+                          'aria-labelledby': 'services-button',
+                        }}
+                      >
+                        {services.map((service) => (
+                          <MenuItem 
+                            key={service.title}
+                            onClick={() => {
+                              navigate(service.path);
+                              handleServicesClose();
+                            }}
+                          >
+                            {service.title}
+                          </MenuItem>
+                        ))}
+                      </Menu>
+                    </>
+                  ) : (
+                    <Button
+                      color="inherit"
+                      onClick={() => navigate(item.path)}
+                    >
+                      {item.title}
+                    </Button>
+                  )}
+                </Box>
+              ))}
               <Button
-                key={item.text}
-                color="inherit"
-                href={item.href}
-                sx={{ textTransform: 'none' }}
+                variant="contained"
+                color="primary"
+                onClick={() => navigate('/login')}
+                sx={{
+                  ml: 2,
+                  px: 3,
+                  borderRadius: 2,
+                }}
               >
-                {item.text}
+                Login
               </Button>
-            ))}
-            <Button
-              variant="contained"
-              color="primary"
-              onClick={() => navigate('/login')}
-            >
-              Login
-            </Button>
-          </Box>
-        )}
-      </Toolbar>
+            </Stack>
+          )}
+        </Toolbar>
+      </Container>
+
+      <Drawer
+        variant="temporary"
+        anchor="right"
+        open={mobileOpen}
+        onClose={handleDrawerToggle}
+        ModalProps={{
+          keepMounted: true,
+        }}
+      >
+        {drawer}
+      </Drawer>
     </AppBar>
   );
 };

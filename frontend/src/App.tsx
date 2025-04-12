@@ -11,6 +11,8 @@ import Profile from './pages/Profile';
 import Settings from './pages/Settings';
 import LandingPage from './pages/LandingPage';
 import PrivateRoute from './components/PrivateRoute';
+import AboutUs from './pages/AboutUs';
+import ContactUs from './pages/ContactUs';
 
 function App() {
   return (
@@ -23,6 +25,8 @@ function App() {
             <Route path="/" element={<LandingPage />} />
             <Route path="/login" element={<Login />} />
             <Route path="/signup" element={<Signup />} />
+            <Route path="/about" element={<AboutUs />} />
+            <Route path="/contact" element={<ContactUs />} />
 
             {/* Protected routes */}
             <Route element={<PrivateRoute />}>
