@@ -4,12 +4,7 @@ const { validateRequest, validateParams, validateQuery } = require('../middlewar
 const { checkRole, checkOwnership, ROLES } = require('../middleware');
 const productController = require('../controllers/ProductController');
 const productVariantController = require('../controllers/ProductVariantController');
-const {
-  productSchema,
-  productIdSchema,
-  stockUpdateSchema,
-  bulkProductsSchema
-} = require('../validations/productValidation');
+
 const {
   createProductSchema,
   updateProductSchema,
@@ -223,7 +218,6 @@ router.post('/',
  *               $ref: '#/components/schemas/Product'
  */
 router.get('/:productId',
-    validateParams(productIdSchema),
     productController.getById
 );
 
@@ -258,7 +252,6 @@ router.get('/:productId',
  */
 router.put('/:productId',
     checkRole([ROLES.ADMIN, ROLES.MANAGER]),
-    validateParams(productIdSchema),
     validateRequest(updateProductSchema),
     productController.update
 );
@@ -284,7 +277,6 @@ router.put('/:productId',
  */
 router.delete('/:productId',
     checkRole([ROLES.ADMIN]),
-    validateParams(productIdSchema),
     productController.delete
 );
 
@@ -491,13 +483,11 @@ router.delete('/:productId',
 // Product variant routes
 router.post('/:productId/variants',
     checkRole([ROLES.ADMIN, ROLES.MANAGER]),
-    validateParams(productIdSchema),
     validateRequest(createVariantSchema),
     productVariantController.createVariant
 );
 
 router.get('/:productId/variants',
-    validateParams(productIdSchema),
     validateQuery(variantQuerySchema),
     productVariantController.getProductVariants
 );

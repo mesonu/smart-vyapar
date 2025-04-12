@@ -7,8 +7,51 @@ const logger = require('./utils/logger');
 
 const PORT = config.port || 3000;
 
+// Global error handlers
+process.on('uncaughtException', (error) => {
+  console.error('\n=== Uncaught Exception ===');
+  console.error('Error:', error);
+  console.error('Stack:', error.stack);
+  console.error('==================\n');
+  
+  logger.error('Uncaught Exception:', {
+    error: error.message,
+    stack: error.stack
+  });
+  
+  // Don't exit immediately, give time to log
+  setTimeout(() => {
+    process.exit(1);
+  }, 1000);
+});
+
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('\n=== Unhandled Rejection ===');
+  console.error('Reason:', reason);
+  console.error('Promise:', promise);
+  console.error('==================\n');
+  
+  logger.error('Unhandled Rejection:', {
+    reason: reason instanceof Error ? reason.message : reason,
+    stack: reason instanceof Error ? reason.stack : undefined
+  });
+});
+
 // Create HTTP server
 const httpServer = createServer(app);
+
+// Error handler for HTTP server
+httpServer.on('error', (error) => {
+  console.error('\n=== HTTP Server Error ===');
+  console.error('Error:', error);
+  console.error('Stack:', error.stack);
+  console.error('==================\n');
+  
+  logger.error('HTTP Server Error:', {
+    error: error.message,
+    stack: error.stack
+  });
+});
 
 // Configure Socket.IO with security settings
 const io = new Server(httpServer, {
@@ -37,6 +80,11 @@ io.on('connection', (socket) => {
   });
 
   socket.on('error', (error) => {
+    console.error('\n=== Socket Error ===');
+    console.error('Socket ID:', socket.id);
+    console.error('Error:', error);
+    console.error('==================\n');
+    
     logger.error(`Socket error: ${socket.id}`, error);
   });
 });
@@ -50,70 +98,64 @@ const server = httpServer.listen(PORT, async () => {
     await initializeDatabase();
     logger.info('Database initialized successfully');
   } catch (error) {
-    logger.error('Failed to initialize database:', error);
-    process.exit(1);
-  }
-});
-
-// Handle server errors
-server.on('error', (error) => {
-  if (error.syscall !== 'listen') {
-    throw error;
-  }
-
-  const bind = typeof PORT === 'string' ? 'Pipe ' + PORT : 'Port ' + PORT;
-
-  switch (error.code) {
-    case 'EACCES':
-      logger.error(`${bind} requires elevated privileges`);
+    console.error('\n=== Database Initialization Error ===');
+    console.error('Error:', error);
+    console.error('Stack:', error.stack);
+    console.error('==================\n');
+    
+    logger.error('Database initialization failed:', {
+      error: error.message,
+      stack: error.stack
+    });
+    
+    // Don't exit immediately, give time to log
+    setTimeout(() => {
       process.exit(1);
-      break;
-    case 'EADDRINUSE':
-      logger.error(`${bind} is already in use`);
-      process.exit(1);
-      break;
-    default:
-      throw error;
+    }, 1000);
   }
 });
 
-// Handle uncaught exceptions
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
-
-// Handle unhandled promise rejections
-process.on('unhandledRejection', (error) => {
-  logger.error('Unhandled Rejection:', error);
-  process.exit(1);
-});
-
-// Handle graceful shutdown
+// Graceful shutdown
 const shutdown = async () => {
+  console.log('\n=== Shutting down server ===');
   logger.info('Shutting down server...');
   
-  // Close all socket connections
-  io.close(() => {
-    logger.info('Socket.IO server closed');
-  });
-
-  // Close HTTP server
-  server.close(async () => {
-    logger.info('HTTP server closed');
+  try {
+    // Close HTTP server
+    await new Promise((resolve) => {
+      httpServer.close(() => {
+        console.log('HTTP server closed');
+        resolve();
+      });
+    });
     
-    try {
-      // Close database connection
-      await sequelize.close();
-      logger.info('Database connection closed');
-      process.exit(0);
-    } catch (error) {
-      logger.error('Error closing database connection:', error);
-      process.exit(1);
-    }
-  });
+    // Close Socket.IO
+    io.close(() => {
+      console.log('Socket.IO server closed');
+    });
+    
+    // Close database connection
+    await sequelize.close();
+    console.log('Database connection closed');
+    
+    logger.info('Server shutdown completed');
+    process.exit(0);
+  } catch (error) {
+    console.error('\n=== Shutdown Error ===');
+    console.error('Error:', error);
+    console.error('Stack:', error.stack);
+    console.error('==================\n');
+    
+    logger.error('Error during shutdown:', {
+      error: error.message,
+      stack: error.stack
+    });
+    
+    process.exit(1);
+  }
 };
 
+// Handle shutdown signals
 process.on('SIGTERM', shutdown);
 process.on('SIGINT', shutdown);
 

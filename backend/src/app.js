@@ -12,6 +12,7 @@ const { auth } = require('./middleware/auth');
 const logger = require('./utils/logger');
 
 // Import routes
+const authRoutes = require('./routes/authRoutes');
 const userRoutes = require('./routes/userRoutes');
 const productRoutes = require('./routes/productRoutes');
 const promotionRoutes = require('./routes/promotionRoutes');
@@ -26,17 +27,21 @@ const app = express();
 
 // 1. Basic middleware (should be first)
 
-// Logging middleware with better formatting
+// Morgan for console logging (development only)
+if (process.env.NODE_ENV !== 'production') {
+  app.use(morgan('combined')); // Simple, colored output for console
+}
+
+// Morgan for file logging (all environments)
 app.use(morgan(':remote-addr - :remote-user [:date[clf]] ":method :url HTTP/:http-version" :status :res[content-length] ":referrer" ":user-agent"', { 
   stream: { 
     write: message => logger.info(message.trim()) 
-  },
-  skip: (req, res) => res.statusCode >= 400
+  }
 }));
 
 // Body parsing middleware with size limits
 app.use(express.json({ 
-  limit: '10kb',
+  limit: '10mb',
   verify: (req, res, buf) => {
     req.rawBody = buf.toString();
   }
@@ -153,7 +158,7 @@ app.use((req, res, next) => {
 });
 
 // Public routes
-app.use('/api/auth', userRoutes);
+app.use('/api/auth', authRoutes);
 
 // Protected routes
 app.use('/api/users', auth, userRoutes);

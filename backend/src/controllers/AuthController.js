@@ -24,6 +24,8 @@ class AuthController extends BaseController {
         address
       } = req.body;
 
+      console.log("request body=====>", req.body);
+
       // Check if user already exists
       const existingUser = await User.findOne({
         where: {

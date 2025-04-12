@@ -32,8 +32,12 @@ winston.addColors(colors);
 
 // Custom format for console output
 const consoleFormat = combine(
+  format(info => {
+    info.level = info.level.toUpperCase();
+    return info;
+  })(),
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-  colorize({ all: true }),
+  colorize({ all: true, colors }),
   printf(({ timestamp, level, message, ...meta }) => {
     let logMessage = `${timestamp} ${level}: ${message}`;
     if (Object.keys(meta).length > 0) {
@@ -46,6 +50,7 @@ const consoleFormat = combine(
 // Custom format for file output
 const fileFormat = combine(
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+  colorize({ all: true, colors }),
   errors({ stack: true }),
   json()
 );
@@ -75,44 +80,120 @@ const errorFileTransport = new DailyRotateFile({
   format: fileFormat
 });
 
-// Create logger instance
+// Create the logger instance
 const logger = winston.createLogger({
   levels,
-  level: process.env.LOG_LEVEL || 'info',
   format: fileFormat,
   transports: [
-    dailyRotateFileTransport,
-    errorFileTransport
+    // Console transport - always active with error handling
+    new winston.transports.Console({
+      format: combine(
+        format(info => {
+          info.level = info.level.toUpperCase();
+          return info;
+        })(),
+        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+        colorize({ all: true, colors }),
+        printf(({ timestamp, level, message, ...meta }) => {
+          let logMessage = `${timestamp} ${level}: ${message}`;
+          if (Object.keys(meta).length > 0) {
+            // Handle error objects specially
+            if (meta.error && meta.error.stack) {
+              logMessage += `\n${meta.error.stack}`;
+            } else {
+              logMessage += ` ${JSON.stringify(meta, null, 2)}`;
+            }
+          }
+          return logMessage;
+        })
+      ),
+      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      handleExceptions: true,
+      handleRejections: true
+    }),
+    // Error logs
+    new DailyRotateFile({
+      filename: path.join(logsDir, 'error-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      level: 'error',
+      format: fileFormat,
+      handleExceptions: true,
+      handleRejections: true
+    }),
+    // Combined logs
+    new DailyRotateFile({
+      filename: path.join(logsDir, 'combined-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      format: fileFormat
+    }),
+    // HTTP request logs
+    new DailyRotateFile({
+      filename: path.join(logsDir, 'http-%DATE%.log'),
+      datePattern: 'YYYY-MM-DD',
+      zippedArchive: true,
+      maxSize: '20m',
+      maxFiles: '14d',
+      level: 'http',
+      format: fileFormat
+    })
   ],
   exceptionHandlers: [
-    new winston.transports.File({ 
+    new winston.transports.Console({
+      format: consoleFormat,
+      handleExceptions: true
+    }),
+    new winston.transports.File({
       filename: path.join(logsDir, 'exceptions.log'),
       format: fileFormat
     })
   ],
   rejectionHandlers: [
-    new winston.transports.File({ 
+    new winston.transports.Console({
+      format: consoleFormat,
+      handleRejections: true
+    }),
+    new winston.transports.File({
       filename: path.join(logsDir, 'rejections.log'),
       format: fileFormat
     })
   ]
 });
 
-// Add console transport in non-production environments
-if (process.env.NODE_ENV !== 'production') {
-  logger.add(new winston.transports.Console({
-    format: consoleFormat
-  }));
-}
-
 // Helper methods for common logging scenarios
 class LoggerHelper {
   static errorWithContext(message, error, context = {}) {
-    logger.error(`${message} - ${error.message}`, {
+    const logData = {
       ...context,
-      stack: error.stack,
-      error: error.toString()
-    });
+      error: {
+        message: error.message,
+        stack: error.stack,
+        ...(error.code && { code: error.code }),
+        ...(error.status && { status: error.status })
+      }
+    };
+
+    // Log to file
+    logger.error(message, logData);
+
+    // Also log to console in development
+    if (process.env.NODE_ENV !== 'production') {
+      console.error('\n=== Error ===');
+      console.error(`Message: ${message}`);
+      console.error('Context:', JSON.stringify(context, null, 2));
+      console.error('Error:', {
+        message: error.message,
+        stack: error.stack,
+        ...(error.code && { code: error.code }),
+        ...(error.status && { status: error.status })
+      });
+      console.error('==================\n');
+    }
   }
 
   static infoWithContext(message, context = {}) {
@@ -124,12 +205,29 @@ class LoggerHelper {
   }
 
   static httpRequest(req, res, responseTime) {
-    logger.http(`${req.method} ${req.url}`, {
+    const logData = {
+      method: req.method,
+      url: req.originalUrl,
       status: res.statusCode,
       responseTime: `${responseTime}ms`,
       ip: req.ip,
       userAgent: req.get('user-agent')
-    });
+    };
+
+    // Log to file
+    logger.http('HTTP Request', logData);
+
+    // Also log to console in development
+    if (process.env.NODE_ENV !== 'production') {
+      console.log('\n=== HTTP Request ===');
+      console.log(`Method: ${logData.method}`);
+      console.log(`URL: ${logData.url}`);
+      console.log(`Status: ${logData.status}`);
+      console.log(`Response Time: ${logData.responseTime}`);
+      console.log(`IP: ${logData.ip}`);
+      console.log(`User Agent: ${logData.userAgent}`);
+      console.log('==================\n');
+    }
   }
 
   static performance(operation, duration, context = {}) {

@@ -3,13 +3,7 @@ const router = express.Router();
 const authController = require('../controllers/AuthController');
 const { validateRequest } = require('../middleware/validation');
 const { auth } = require('../middleware/auth');
-const {
-  registerSchema,
-  loginSchema,
-  updateProfileSchema,
-  changePasswordSchema,
-  userIdSchema
-} = require('../validations/userValidation');
+
 
 /**
  * @swagger
@@ -46,14 +40,14 @@ const {
  */
 
 // Public routes
-router.post('/register', validateRequest(registerSchema), authController.register);
-router.post('/login', validateRequest(loginSchema), authController.login);
+router.post('/register', authController.register);
+router.post('/login',  authController.login);
 
 // Protected routes
 // router.use(auth);
 router.get('/profile', authController.getProfile);
-router.put('/profile', validateRequest(updateProfileSchema), authController.updateProfile);
-router.post('/change-password', validateRequest(changePasswordSchema), authController.changePassword);
+router.put('/profile',  authController.updateProfile);
+router.post('/change-password',  authController.changePassword);
 
 // /**
 //  * @swagger

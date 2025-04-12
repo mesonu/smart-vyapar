@@ -29,14 +29,14 @@ const registerSchema = Joi.object({
             'string.pattern.base': 'Password must contain at least one uppercase letter, one lowercase letter, one number, and one special character',
             'any.required': 'Password is required'
         }),
-    confirmPassword: Joi.string()
-        .required()
-        .valid(Joi.ref('password'))
-        .messages({
-            'string.empty': 'Confirm password is required',
-            'any.only': 'Passwords do not match',
-            'any.required': 'Confirm password is required'
-        }),
+    // confirmPassword: Joi.string()
+    //     .required()
+    //     .valid(Joi.ref('password'))
+    //     .messages({
+    //         'string.empty': 'Confirm password is required',
+    //         'any.only': 'Passwords do not match',
+    //         'any.required': 'Confirm password is required'
+    //     }),
     role: Joi.string()
         .valid('user', 'admin', 'customer')
         .default('user')
