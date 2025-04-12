@@ -144,6 +144,18 @@ module.exports = (sequelize, DataTypes) => {
         min: 0
       }
     },
+    has_expiry: {
+      type: DataTypes.BOOLEAN,
+      allowNull: false,
+      defaultValue: false
+    },
+    expiry_alert_days: {
+      type: DataTypes.INTEGER,
+      allowNull: true,
+      validate: {
+        min: 1
+      }
+    },
     min_stock_level: {
       type: DataTypes.DECIMAL(10, 2),
       allowNull: true,

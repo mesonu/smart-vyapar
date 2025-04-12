@@ -1,301 +1,162 @@
-# Backend System Documentation
+# E-Commerce API Documentation
 
-## Overview
-This documentation covers the backend system architecture and its various modules. The system is built using Node.js, Express, and PostgreSQL, following a modular architecture for better maintainability and scalability.
+## Project Overview
+This is a comprehensive e-commerce API built with Node.js, Express, and various modern technologies. The API provides a robust foundation for building e-commerce applications with features like product management, order processing, user authentication, and AI-powered analytics.
 
-## System Architecture
+## Table of Contents
+1. [Project Structure](#project-structure)
+2. [Features](#features)
+3. [Technology Stack](#technology-stack)
+4. [API Documentation](#api-documentation)
+5. [Development Guide](#development-guide)
+6. [Future Plans](#future-plans)
 
-```mermaid
-graph TD
-    A[User Management] --> B[Authentication]
-    A --> C[Authorization]
-    A --> D[Profile Management]
-    
-    E[Product Management] --> F[Inventory]
-    E --> G[Variants]
-    E --> H[Reviews]
-    E --> I[Tags]
-    
-    J[Customer Management] --> K[Profile]
-    J --> L[Contacts]
-    J --> M[Documents]
-    
-    N[Invoice Management] --> O[Items]
-    N --> P[Payments]
-    N --> Q[History]
-    
-    R[Payment Management] --> S[Transactions]
-    R --> T[Refunds]
-    R --> U[Status Tracking]
-    
-    V[Notification Management] --> W[Email]
-    V --> X[SMS]
-    V --> Y[In-App]
-    
-    Z[Promotion Management] --> AA[Discounts]
-    Z --> BB[Campaigns]
-    Z --> CC[Analytics]
-    
-    A --> J
-    E --> N
-    J --> N
-    N --> R
-    R --> V
-    E --> Z
-    Z --> N
+## Project Structure
+```
+backend/
+├── src/
+│   ├── config/         # Configuration files
+│   ├── controllers/    # Route controllers
+│   ├── middleware/     # Custom middleware
+│   ├── models/         # Database models
+│   ├── routes/         # API routes
+│   ├── services/       # Business logic
+│   ├── utils/          # Utility functions
+│   ├── validations/    # Validation schemas
+│   └── app.js          # Application entry point
+├── docs/               # Documentation
+├── tests/              # Test files
+└── package.json        # Project dependencies
 ```
 
-## Module Documentation
+## Features
 
-### Core Modules
-
-1. [User Management](user-management.md)
-   - User authentication and authorization
-   - Profile management
+### Current Features
+1. **Authentication & Authorization**
+   - JWT-based authentication
    - Role-based access control
-   - Session management
+   - Password hashing and security
 
-2. [Product Management](product-management.md)
-   - Product catalog
-   - Inventory management
+2. **Product Management**
+   - CRUD operations for products
    - Product variants
-   - Reviews and ratings
-   - Tags and categories
+   - Product reviews and ratings
+   - Category and tag management
 
-3. [Customer Management](customer-management.md)
-   - Customer profiles
-   - Contact management
-   - Document management
-   - Customer history
+3. **Order Management**
+   - Order processing
+   - Order status tracking
+   - Payment integration
 
-4. [Invoice Management](invoice-management.md)
-   - Invoice generation
-   - Item management
-   - Status tracking
-   - History logging
+4. **User Management**
+   - User registration and profile management
+   - Customer management
+   - Address management
 
-5. [Payment Management](payment-management.md)
-   - Payment processing
-   - Transaction tracking
-   - Refund management
-   - Payment status
+5. **AI Integration**
+   - Billing analysis
+   - Inventory optimization
+   - Voice command processing
+   - Customer behavior analysis
+   - Text translation
+   - GST compliance analysis
 
-6. [Notification Management](notification-management.md)
-   - Email notifications
-   - SMS notifications
-   - In-app notifications
-   - Template management
+### Future Features
+1. **Enhanced AI Capabilities**
+   - Product recommendation engine
+   - Price optimization
+   - Fraud detection
+   - Sentiment analysis
 
-7. [Promotion Management](promotion-management.md)
-   - Discount management
-   - Campaign management
-   - Usage tracking
-   - Performance analytics
+2. **Advanced Analytics**
+   - Sales forecasting
+   - Customer segmentation
+   - Inventory prediction
 
-## Database Schema
+3. **Additional Integrations**
+   - Social media integration
+   - Marketing automation
+   - Advanced payment gateways
 
-```mermaid
-erDiagram
-    users ||--o{ customers : manages
-    users ||--o{ products : manages
-    users ||--o{ invoices : creates
-    users ||--o{ payments : processes
-    
-    customers ||--o{ invoices : receives
-    customers ||--o{ payments : makes
-    
-    products ||--o{ invoice_items : "appears in"
-    products ||--o{ product_variants : has
-    products ||--o{ product_reviews : receives
-    products ||--o{ product_tags : has
-    
-    invoices ||--o{ invoice_items : contains
-    invoices ||--o{ payments : receives
-    invoices ||--o{ invoice_history : tracks
-    
-    payments ||--o{ payment_status : tracks
-```
+## Technology Stack
 
-## API Structure
+### Core Technologies
+- Node.js
+- Express.js
+- PostgreSQL
+- Sequelize ORM
+- JWT for authentication
 
-### Base URL
-```
-https://api.example.com/v1
-```
+### AI Tools
+Currently using:
+- OpenAI API for text processing
+- Google Cloud Speech-to-Text for voice commands
+- Custom ML models for analysis
 
-### Authentication
-- JWT-based authentication
-- Token expiration: 24 hours
-- Refresh token mechanism
+Open Source Alternatives:
+1. **Text Processing**
+   - Hugging Face Transformers
+   - spaCy
+   - NLTK
 
-### Common Headers
-```http
-Authorization: Bearer <token>
-Content-Type: application/json
-Accept: application/json
-```
+2. **Voice Processing**
+   - Mozilla DeepSpeech
+   - Kaldi
+   - Vosk
 
-### Response Format
-```json
-{
-  "status": "success",
-  "data": {},
-  "message": "Operation successful",
-  "meta": {
-    "page": 1,
-    "limit": 10,
-    "total": 100
-  }
-}
-```
+3. **Machine Learning**
+   - TensorFlow.js
+   - scikit-learn
+   - PyTorch
 
-## Development Setup
+4. **Translation**
+   - OpenNMT
+   - Marian NMT
+   - Argos Translate
 
-### Prerequisites
-- Node.js (v14 or higher)
-- PostgreSQL (v12 or higher)
-- Redis (for caching)
-- NPM or Yarn
+## API Documentation
+Detailed API documentation is available in the following files:
+- [Authentication API](authentication.md)
+- [Product API](product.md)
+- [Order API](order.md)
+- [User API](user.md)
+- [AI API](ai.md)
 
-### Installation
-1. Clone the repository
-2. Install dependencies:
+## Development Guide
+1. **Setup**
    ```bash
    npm install
-   ```
-3. Set up environment variables:
-   ```bash
    cp .env.example .env
    ```
-4. Run migrations:
+
+2. **Database Setup**
    ```bash
-   npm run migrate
-   ```
-5. Start the server:
-   ```bash
-   npm start
+   npm run db:migrate
+   npm run db:seed
    ```
 
-### Development Commands
-- `npm start` - Start the server
-- `npm run dev` - Start in development mode
-- `npm test` - Run tests
-- `npm run lint` - Run linter
-- `npm run migrate` - Run migrations
-- `npm run seed` - Seed the database
+3. **Running the Application**
+   ```bash
+   npm run dev
+   ```
 
-## Testing
+4. **Testing**
+   ```bash
+   npm test
+   ```
 
-### Test Structure
-- Unit tests
-- Integration tests
-- API tests
-- Performance tests
+## Future Plans
+1. **Short-term**
+   - Implement open-source AI alternatives
+   - Add comprehensive test coverage
+   - Enhance documentation
 
-### Running Tests
-```bash
-# All tests
-npm test
+2. **Medium-term**
+   - Implement advanced AI features
+   - Add real-time analytics
+   - Improve performance optimization
 
-# Specific test file
-npm test -- tests/user.test.js
-
-# With coverage
-npm run test:coverage
-```
-
-## Deployment
-
-### Environment Variables
-- `NODE_ENV` - Environment (development, production)
-- `PORT` - Server port
-- `DATABASE_URL` - Database connection string
-- `JWT_SECRET` - JWT secret key
-- `REDIS_URL` - Redis connection string
-
-### Deployment Steps
-1. Build the application
-2. Set up environment variables
-3. Run database migrations
-4. Start the server
-5. Configure reverse proxy
-6. Set up SSL
-
-## Monitoring
-
-### Logging
-- Application logs
-- Error logs
-- Access logs
-- Performance logs
-
-### Metrics
-- Response times
-- Error rates
-- Database performance
-- Memory usage
-
-### Alerts
-- Error notifications
-- Performance alerts
-- Security alerts
-- Resource usage alerts
-
-## Security
-
-### Authentication
-- JWT-based authentication
-- Password hashing
-- Session management
-- Rate limiting
-
-### Authorization
-- Role-based access control
-- Permission management
-- Resource ownership
-- API key management
-
-### Data Protection
-- Data encryption
-- Secure storage
-- Input validation
-- XSS protection
-
-## Contributing
-
-### Code Style
-- Follow ESLint rules
-- Use Prettier for formatting
-- Follow naming conventions
-- Write meaningful comments
-
-### Git Workflow
-1. Create feature branch
-2. Make changes
-3. Run tests
-4. Create pull request
-5. Code review
-6. Merge to main
-
-### Documentation
-- Update relevant documentation
-- Add comments for complex logic
-- Document API changes
-- Update README if needed
-
-## Support
-
-### Getting Help
-- Check documentation
-- Search issues
-- Create new issue
-- Contact support team
-
-### Reporting Issues
-- Use issue template
-- Provide reproduction steps
-- Include error logs
-- Add screenshots if needed
-
-## License
-This project is licensed under the MIT License - see the [LICENSE](LICENSE) file for details. 
+3. **Long-term**
+   - Microservices architecture
+   - Kubernetes deployment
+   - Advanced caching strategies 
