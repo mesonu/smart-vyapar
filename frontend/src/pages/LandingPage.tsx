@@ -34,10 +34,62 @@ import {
   Support as SupportIcon,
   Sync as SyncIcon,
   ArrowForward as ArrowForwardIcon,
+  Check as CheckIcon,
 } from '@mui/icons-material';
 import { useNavigate } from 'react-router-dom';
 import LandingNav from '../components/LandingNav';
 import LandingFooter from '../components/LandingFooter';
+import PricingSection from '../components/sections/pricing/PricingSection';
+
+const pricingPlans = [
+  {
+    name: 'Starter',
+    price: '₹999',
+    period: '/month',
+    description: 'Perfect for small businesses getting started',
+    features: [
+      'Up to 100 products',
+      'Basic inventory management',
+      'Simple billing system',
+      'Email support',
+      'Basic reports',
+    ],
+    popular: false,
+  },
+  {
+    name: 'Professional',
+    price: '₹2,499',
+    period: '/month',
+    description: 'Ideal for growing businesses',
+    features: [
+      'Up to 500 products',
+      'Advanced inventory management',
+      'GST compliance',
+      'Priority support',
+      'Advanced analytics',
+      'Voice commands',
+      'Mobile app access',
+    ],
+    popular: true,
+  },
+  {
+    name: 'Enterprise',
+    price: '₹4,999',
+    period: '/month',
+    description: 'For large businesses with complex needs',
+    features: [
+      'Unlimited products',
+      'Multi-location support',
+      'Custom integrations',
+      '24/7 support',
+      'Advanced security',
+      'API access',
+      'Custom reporting',
+      'Dedicated account manager',
+    ],
+    popular: false,
+  },
+];
 
 const LandingPage: React.FC = () => {
   const theme = useTheme();
@@ -936,6 +988,9 @@ const LandingPage: React.FC = () => {
           </Grid>
         </Container>
       </Box>
+
+      {/* Pricing Section */}
+      <PricingSection plans={pricingPlans} />
 
       {/* Enhanced CTA Section */}
       <Box
