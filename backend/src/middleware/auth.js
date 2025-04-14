@@ -1,8 +1,8 @@
 const jwt = require('jsonwebtoken');
+const { logger } = require('../utils/logger');
 const { User } = require('../models');
+const { ResponseHandler } = require('../utils/ResponseHandler');
 const config = require('../config/config');
-const ResponseHandler = require('../utils/ResponseHandler');
-const logger = require('../utils/logger');
 
 // Define available roles
 // const ROLES = {
@@ -20,16 +20,14 @@ const ROLES = { ...config.ROLES };
  */
 const auth = async (req, res, next) => {
     try {
-        const {secret, expiresIn} = config.jwt;
-        // Get token from header
         const token = req.header('Authorization')?.replace('Bearer ', '');
         
         if (!token) {
-            logger.warn('Authentication failed: No token provided', {
-                path: req.path,
+            logger.warn('Authentication failed - No token provided', {
+                path: req.originalUrl,
                 method: req.method
             });
-            return ResponseHandler.unauthorized(res, 'No token, authorization denied');
+            return ResponseHandler.unauthorized(res, 'Authentication required');
         }
 
         // Verify token

@@ -11,27 +11,27 @@ const {
 } = require('../validations/order/order');
 
 // Get all orders (admin/manager only)
-router.get('/',
-    checkRole([ROLES.ADMIN, ROLES.MANAGER]),
-    validateQuery(orderQuerySchema),
-    orderController.getAll
-);
+// router.get('/',
+//     checkRole([ROLES.ADMIN, ROLES.MANAGER]),
+//     validateQuery(orderQuerySchema),
+//     orderController.getAll
+// );
 
 // Get order by ID
-router.get('/:orderId',
-    validateParams(orderIdSchema),
-    checkOwnership('orderId', async (userId, orderId) => {
-        const order = await Order.findByPk(orderId);
-        return order && (order.userId === userId || [ROLES.ADMIN, ROLES.MANAGER].includes(req.user.role));
-    }),
-    orderController.getById
-);
+// router.get('/:orderId',
+//     validateParams(orderIdSchema),
+//     checkOwnership('orderId', async (userId, orderId) => {
+//         const order = await Order.findByPk(orderId);
+//         return order && (order.userId === userId || [ROLES.ADMIN, ROLES.MANAGER].includes(req.user.role));
+//     }),
+//     orderController.getById
+// );
 
-// Create order (authenticated users)
-router.post('/',
-    validateRequest(createOrderSchema),
-    orderController.create
-);
+// // Create order (authenticated users)
+// router.post('/',
+//     validateRequest(createOrderSchema),
+//     orderController.create
+// );
 
 // Update order status (admin/manager only)
 // router.put('/:orderId/status',

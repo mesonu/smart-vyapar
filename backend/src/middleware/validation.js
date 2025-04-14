@@ -1,5 +1,5 @@
 const { ValidationError } = require('joi');
-const logger = require('../utils/logger');
+const { logger } = require('../utils/logger');
 const ResponseHandler = require('../utils/ResponseHandler');
 
 /**

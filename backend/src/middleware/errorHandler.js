@@ -38,11 +38,11 @@ const logError = (err, req) => {
   };
 
   if (err.statusCode >= 500) {
-    logger.error('Server Error:', errorLog);
+    logger.error('Server Error', errorLog);
   } else if (err.statusCode >= 400) {
-    logger.warn('Client Error:', errorLog);
+    logger.warn('Client Error', errorLog);
   } else {
-    logger.info('Application Error:', errorLog);
+    logger.info('Application Error', errorLog);
   }
 };
 
@@ -101,33 +101,22 @@ const errorTracker = (req, res, next) => {
   const start = Date.now();
   res.on('finish', () => {
     const duration = Date.now() - start;
-    const logData = {
-      timestamp: new Date().toISOString(),
-      method: req.method,
-      path: req.originalUrl,
-      status: res.statusCode,
-      duration: `${duration}ms`,
-      user: req.user ? {
-        id: req.user.id,
-        email: req.user.email
-      } : null,
-      ip: req.ip,
-      userAgent: req.get('user-agent')
-    };
-
-    if (res.statusCode >= 500) {
-      logger.error('Request Error:', logData);
-    } else if (res.statusCode >= 400) {
-      logger.warn('Request Warning:', logData);
-    } else {
-      logger.info('Request Success:', logData);
+    if (res.statusCode >= 400) {
+      logger.warn('Request Error', {
+        method: req.method,
+        path: req.originalUrl,
+        status: res.statusCode,
+        duration: `${duration}ms`,
+        ip: req.ip,
+        userAgent: req.get('user-agent')
+      });
     }
   });
   next();
 };
 
 module.exports = {
-  errorHandler,
   AppError,
+  errorHandler,
   errorTracker
 }; 

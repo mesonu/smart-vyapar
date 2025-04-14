@@ -87,113 +87,36 @@ const logger = winston.createLogger({
   transports: [
     // Console transport - always active with error handling
     new winston.transports.Console({
-      format: combine(
-        format(info => {
-          info.level = info.level.toUpperCase();
-          return info;
-        })(),
-        timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
-        colorize({ all: true, colors }),
-        printf(({ timestamp, level, message, ...meta }) => {
-          let logMessage = `${timestamp} ${level}: ${message}`;
-          if (Object.keys(meta).length > 0) {
-            // Handle error objects specially
-            if (meta.error && meta.error.stack) {
-              logMessage += `\n${meta.error.stack}`;
-            } else {
-              logMessage += ` ${JSON.stringify(meta, null, 2)}`;
-            }
-          }
-          return logMessage;
-        })
-      ),
-      level: process.env.NODE_ENV === 'production' ? 'info' : 'debug',
+      format: consoleFormat,
       handleExceptions: true,
       handleRejections: true
     }),
-    // Error logs
-    new DailyRotateFile({
-      filename: path.join(logsDir, 'error-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      level: 'error',
-      format: fileFormat,
-      handleExceptions: true,
-      handleRejections: true
-    }),
-    // Combined logs
-    new DailyRotateFile({
-      filename: path.join(logsDir, 'combined-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      format: fileFormat
-    }),
-    // HTTP request logs
-    new DailyRotateFile({
-      filename: path.join(logsDir, 'http-%DATE%.log'),
-      datePattern: 'YYYY-MM-DD',
-      zippedArchive: true,
-      maxSize: '20m',
-      maxFiles: '14d',
-      level: 'http',
-      format: fileFormat
-    })
+    // File transports
+    dailyRotateFileTransport,
+    errorFileTransport
   ],
-  exceptionHandlers: [
-    new winston.transports.Console({
-      format: consoleFormat,
-      handleExceptions: true
-    }),
-    new winston.transports.File({
-      filename: path.join(logsDir, 'exceptions.log'),
-      format: fileFormat
-    })
-  ],
-  rejectionHandlers: [
-    new winston.transports.Console({
-      format: consoleFormat,
-      handleRejections: true
-    }),
-    new winston.transports.File({
-      filename: path.join(logsDir, 'rejections.log'),
-      format: fileFormat
-    })
-  ]
+  exitOnError: false
 });
 
-// Helper methods for common logging scenarios
+// Create a stream object with a 'write' function that will be used by Morgan
+logger.stream = {
+  write: function(message) {
+    logger.http(message.trim());
+  }
+};
+
+// Helper class for structured logging
 class LoggerHelper {
   static errorWithContext(message, error, context = {}) {
-    const logData = {
-      ...context,
-      error: {
-        message: error.message,
-        stack: error.stack,
-        ...(error.code && { code: error.code }),
-        ...(error.status && { status: error.status })
-      }
-    };
+    logger.error(message, {
+      error: error?.message || error,
+      stack: error?.stack,
+      ...context
+    });
+  }
 
-    // Log to file
-    logger.error(message, logData);
-
-    // Also log to console in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.error('\n=== Error ===');
-      console.error(`Message: ${message}`);
-      console.error('Context:', JSON.stringify(context, null, 2));
-      console.error('Error:', {
-        message: error.message,
-        stack: error.stack,
-        ...(error.code && { code: error.code }),
-        ...(error.status && { status: error.status })
-      });
-      console.error('==================\n');
-    }
+  static warnWithContext(message, context = {}) {
+    logger.warn(message, context);
   }
 
   static infoWithContext(message, context = {}) {
@@ -214,80 +137,46 @@ class LoggerHelper {
       userAgent: req.get('user-agent')
     };
 
-    // Log to file
-    logger.http('HTTP Request', logData);
-
-    // Also log to console in development
-    if (process.env.NODE_ENV !== 'production') {
-      console.log('\n=== HTTP Request ===');
-      console.log(`Method: ${logData.method}`);
-      console.log(`URL: ${logData.url}`);
-      console.log(`Status: ${logData.status}`);
-      console.log(`Response Time: ${logData.responseTime}`);
-      console.log(`IP: ${logData.ip}`);
-      console.log(`User Agent: ${logData.userAgent}`);
-      console.log('==================\n');
+    if (res.statusCode >= 500) {
+      logger.error('HTTP Request Error', logData);
+    } else if (res.statusCode >= 400) {
+      logger.warn('HTTP Request Warning', logData);
+    } else {
+      logger.http('HTTP Request', logData);
     }
   }
 
   static performance(operation, duration, context = {}) {
-    logger.info(`Performance: ${operation}`, {
-      ...context,
-      duration: `${duration}ms`
+    logger.info('Performance', {
+      operation,
+      duration: `${duration}ms`,
+      ...context
     });
   }
 
   static security(event, context = {}) {
-    logger.warn(`Security Event: ${event}`, context);
+    logger.warn('Security Event', { event, ...context });
   }
 
   static audit(action, user, context = {}) {
-    logger.info(`Audit: ${action}`, {
-      ...context,
-      user: user.id,
-      timestamp: new Date().toISOString()
+    logger.info('Audit', {
+      action,
+      user: user?.id || 'anonymous',
+      ...context
     });
   }
 }
 
-// Add helper methods to logger
-Object.assign(logger, LoggerHelper);
+// Export both the logger instance and the helper class
+module.exports = {
+  logger,
+  LoggerHelper
+};
 
-// Export logger instance
-module.exports = logger; 
-
-
-/**
-// Example of use Helper method:
-// Error logging with context
-logger.errorWithContext('Failed to process request', error, { userId: 123 });
-
-// Info logging with context
-logger.infoWithContext('User logged in', { userId: 123, ip: '127.0.0.1' });
-
-// Debug logging with context
-logger.debugWithContext('Processing request', { method: 'GET', path: '/api/users' });
-
-// HTTP request logging
-logger.httpRequest(req, res, responseTime);
-
-// Performance logging
-logger.performance('Database query', 150, { query: 'SELECT * FROM users' });
-
-// Security event logging
-logger.security('Failed login attempt', { ip: '127.0.0.1', username: 'test' });
-
-// Audit logging
-logger.audit('User deleted', user, { targetId: 456 });
-
-
-
-
-//////////////////////////////////////////////////////////////
+/* Example usage:
 
 // Basic logging:
-
-const logger = require('./utils/logger');
+const { logger } = require('./utils/logger');
 
 // Basic logging
 logger.error('This is an error message');

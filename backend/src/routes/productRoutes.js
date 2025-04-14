@@ -161,10 +161,10 @@ const {
  *                   items:
  *                     $ref: '#/components/schemas/Product'
  */
-router.get('/', 
-    validateQuery(productQuerySchema),
-    productController.getAll
-);
+// router.get('/', 
+//     validateQuery(productQuerySchema),
+//     productController.getAll
+// );
 
 /**
  * @swagger
@@ -188,11 +188,11 @@ router.get('/',
  *             schema:
  *               $ref: '#/components/schemas/Product'
  */
-router.post('/',
-    checkRole([ROLES.ADMIN, ROLES.MANAGER]),
-    validateRequest(createProductSchema),
-    productController.create
-);
+// router.post('/',
+//     checkRole([ROLES.ADMIN, ROLES.MANAGER]),
+//     validateRequest(createProductSchema),
+//     productController.create
+// );
 
 /**
  * @swagger
@@ -217,9 +217,9 @@ router.post('/',
  *             schema:
  *               $ref: '#/components/schemas/Product'
  */
-router.get('/:productId',
-    productController.getById
-);
+// router.get('/:productId',
+//     productController.getById
+// );
 
 /**
  * @swagger
@@ -250,11 +250,11 @@ router.get('/:productId',
  *             schema:
  *               $ref: '#/components/schemas/Product'
  */
-router.put('/:productId',
-    checkRole([ROLES.ADMIN, ROLES.MANAGER]),
-    validateRequest(updateProductSchema),
-    productController.update
-);
+// router.put('/:productId',
+//     checkRole([ROLES.ADMIN, ROLES.MANAGER]),
+//     validateRequest(updateProductSchema),
+//     productController.update
+// );
 
 /**
  * @swagger
@@ -275,10 +275,10 @@ router.put('/:productId',
  *       204:
  *         description: Product deleted successfully
  */
-router.delete('/:productId',
-    checkRole([ROLES.ADMIN]),
-    productController.delete
-);
+// router.delete('/:productId',
+//     checkRole([ROLES.ADMIN]),
+//     productController.delete
+// );
 
 /**
  * @swagger

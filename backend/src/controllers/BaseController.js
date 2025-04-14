@@ -1,116 +1,326 @@
-const ResponseHandler = require('../utils/ResponseHandler');
-const { logger } = require('../utils/logger');
-const config = require('../config/config');
+const { logger } = require("../utils/logger");
+const ResponseHandler = require("../utils/ResponseHandler");
+const { Op } = require("sequelize");
 
 class BaseController {
-  constructor(model) {
-    this.model = model;
+  constructor() {
     this.ResponseHandler = ResponseHandler;
-    this.config = config;
+    this.errorMappings = {
+      // Validation Errors
+      ValidationError: (res, error) =>
+        this.ResponseHandler.validationError(res, error),
+      JoiValidationError: (res, error) =>
+        this.ResponseHandler.validationError(res, error),
+
+      // Database Errors
+      SequelizeUniqueConstraintError: (res, error) =>
+        this.ResponseHandler.databaseError(res, error),
+      SequelizeForeignKeyConstraintError: (res, error) =>
+        this.ResponseHandler.databaseError(res, error),
+      SequelizeValidationError: (res, error) =>
+        this.ResponseHandler.databaseError(res, error),
+
+      // Authentication/Authorization Errors
+      JsonWebTokenError: (res) =>
+        this.ResponseHandler.authError(res, "Invalid token"),
+      TokenExpiredError: (res) =>
+        this.ResponseHandler.authError(res, "Token expired"),
+      UnauthorizedError: (res, error) =>
+        this.ResponseHandler.unauthorized(res, error.message),
+      ForbiddenError: (res, error) =>
+        this.ResponseHandler.forbidden(res, error.message),
+
+      // Business Logic Errors
+      NotFoundError: (res, error) =>
+        this.ResponseHandler.notFound(res, error.message),
+      ConflictError: (res, error) =>
+        this.ResponseHandler.conflict(res, error.message),
+
+      // Rate Limiting
+      RateLimitError: (res, error) =>
+        this.ResponseHandler.rateLimitError(res, error.message),
+
+      // Service Errors
+      ServiceUnavailableError: (res, error) =>
+        this.ResponseHandler.serviceUnavailable(res, error.message),
+    };
   }
 
-  async handleError(error, res) {
-    logger.error(`Error in ${this.constructor.name}:`, { error: error.message });
-    
-    if (error.name === 'SequelizeValidationError') {
-      return this.ResponseHandler.validationError(res, error);
+  /**
+   * Enhanced error handling with automatic error type detection
+   * @param {Object} res - Express response object
+   * @param {Error} error - Error object
+   * @param {string} [customMessage] - Optional custom error message
+   * @returns {Object} Formatted error response
+   */
+  handleError(res, error, customMessage = null) {
+    logger.error("Error occurred:", {
+      message: error.message,
+      stack: error.stack,
+      customMessage,
+    });
+
+    // Handle specific error types
+    if (error.name === "SequelizeValidationError") {
+      return this.ResponseHandler.validationError(
+        res,
+        "Validation failed",
+        error.errors
+      );
     }
-    if (error.name === 'SequelizeUniqueConstraintError') {
-      return this.ResponseHandler.conflict(res, 'Duplicate entry found');
+
+    if (error.name === "SequelizeUniqueConstraintError") {
+      return this.ResponseHandler.badRequest(res, "Duplicate entry found");
     }
-    if (error.name === 'SequelizeForeignKeyConstraintError') {
-      return this.ResponseHandler.error(res, 'Foreign key constraint violation', 400);
+
+    if (error.name === "SequelizeDatabaseError") {
+      return this.ResponseHandler.databaseError(
+        res,
+        "Database operation failed"
+      );
     }
-    
-    return this.ResponseHandler.databaseError(res, error);
+
+    if (error.name === "JsonWebTokenError") {
+      return this.ResponseHandler.unauthorized(res, "Invalid token");
+    }
+
+    if (error.name === "TokenExpiredError") {
+      return this.ResponseHandler.unauthorized(res, "Token expired");
+    }
+
+    // Default to server error
+    return this.ResponseHandler.serverError(
+      res,
+      customMessage || "An unexpected error occurred"
+    );
   }
 
-  async create(req, res) {
-    try {
-      const data = await this.model.create(req.body);
-      logger.info(`${this.model.name} created successfully`, { id: data.id });
-      return this.ResponseHandler.created(res, data);
-    } catch (error) {
-      return this.handleError(error, res);
-    }
+  /**
+   * Create a custom error with specific type
+   * @param {string} type - Error type (must match errorMappings)
+   * @param {string} message - Error message
+   * @returns {Error} Custom error object
+   */
+  createError(type, message) {
+    const error = new Error(message);
+    error.name = type;
+    return error;
   }
 
-  async getAll(req, res) {
-    try {
-      const { page = 1, limit = 10, ...filters } = req.query;
-      const offset = (page - 1) * limit;
-
-      const { count, rows: data } = await this.model.findAndCountAll({
-        where: this.buildWhereClause(filters),
-        limit,
-        offset,
-        order: [['createdAt', 'DESC']]
-      });
-
-      return this.ResponseHandler.success(res, {
-        data,
-        pagination: {
-          total: count,
-          page: parseInt(page),
-          pages: Math.ceil(count / limit)
-        }
-      });
-    } catch (error) {
-      return this.handleError(error, res);
-    }
+  /**
+   * Throw a not found error
+   * @param {string} message - Error message
+   * @throws {Error} NotFoundError
+   */
+  throwNotFound(message = "Resource not found") {
+    throw this.createError("NotFoundError", message);
   }
 
-  async getById(req, res) {
-    try {
-      const data = await this.model.findByPk(req.params.id);
-      if (!data) {
-        return this.ResponseHandler.notFound(res, `${this.model.name} not found`);
-      }
-      return this.ResponseHandler.success(res, data);
-    } catch (error) {
-      return this.handleError(error, res);
-    }
+  /**
+   * Throw a validation error
+   * @param {string} message - Error message
+   * @throws {Error} ValidationError
+   */
+  throwValidationError(message = "Validation failed") {
+    throw this.createError("ValidationError", message);
   }
 
-  async update(req, res) {
-    try {
-      const data = await this.model.findByPk(req.params.id);
-      if (!data) {
-        return this.ResponseHandler.notFound(res, `${this.model.name} not found`);
-      }
-
-      const updated = await data.update(req.body);
-      logger.info(`${this.model.name} updated`, { id: data.id });
-      return this.ResponseHandler.success(res, updated);
-    } catch (error) {
-      return this.handleError(error, res);
-    }
+  /**
+   * Throw a conflict error
+   * @param {string} message - Error message
+   * @throws {Error} ConflictError
+   */
+  throwConflictError(message = "Resource conflict") {
+    throw this.createError("ConflictError", message);
   }
 
-  async delete(req, res) {
-    try {
-      const data = await this.model.findByPk(req.params.id);
-      if (!data) {
-        return this.ResponseHandler.notFound(res, `${this.model.name} not found`);
-      }
-
-      await data.destroy();
-      logger.info(`${this.model.name} deleted`, { id: data.id });
-      return this.ResponseHandler.success(res, null, `${this.model.name} deleted successfully`);
-    } catch (error) {
-      return this.handleError(error, res);
+  /**
+   * Validate request body against schema
+   * @param {Object} req - Express request object
+   * @param {Object} schema - Joi validation schema
+   * @returns {Object|null} Validation error or null
+   */
+  validateRequest(req, schema) {
+    const { error } = schema.validate(req.body);
+    if (error) {
+      throw new Error(error.details[0].message);
     }
+    return null;
   }
 
-  buildWhereClause(filters) {
-    const where = {};
-    Object.entries(filters).forEach(([key, value]) => {
-      if (value) {
-        where[key] = value;
+  /**
+   * Check if user has required role
+   * @param {Object} user - User object
+   * @param {string|Array} requiredRole - Required role(s)
+   * @returns {boolean} Whether user has required role
+   */
+  hasRequiredRole(user, requiredRole) {
+    if (!user || !user.role) return false;
+
+    if (Array.isArray(requiredRole)) {
+      return requiredRole.includes(user.role);
+    }
+
+    return user.role === requiredRole;
+  }
+
+  /**
+   * Check if user has required permissions
+   * @param {Object} user - User object
+   * @param {string|Array} requiredPermission - Required permission(s)
+   * @returns {boolean} Whether user has required permission
+   */
+  hasRequiredPermission(user, requiredPermission) {
+    if (!user || !user.permissions) return false;
+
+    if (Array.isArray(requiredPermission)) {
+      return requiredPermission.some((permission) =>
+        user.permissions.includes(permission)
+      );
+    }
+
+    return user.permissions.includes(requiredPermission);
+  }
+
+  /**
+   * Get pagination parameters from request
+   * @param {Object} req - Express request object
+   * @returns {Object} Pagination parameters
+   */
+  getPaginationParams(req) {
+    const page = parseInt(req.query.page) || 1;
+    const limit = parseInt(req.query.limit) || 10;
+    const offset = (page - 1) * limit;
+
+    return { page, limit, offset };
+  }
+
+  /**
+   * Get sorting parameters from request
+   * @param {Object} req - Express request object
+   * @param {Array} allowedFields - Allowed sort fields
+   * @returns {Array} Sort parameters
+   */
+  getSortParams(req, allowedFields = []) {
+    const sortBy = req.query.sortBy || "createdAt";
+    const sortOrder = req.query.sortOrder || "DESC";
+
+    if (allowedFields.length && !allowedFields.includes(sortBy)) {
+      return [["createdAt", "DESC"]];
+    }
+
+    return [[sortBy, sortOrder]];
+  }
+
+  /**
+   * Get filter parameters from request
+   * @param {Object} req - Express request object
+   * @param {Array} allowedFields - Allowed filter fields
+   * @returns {Object} Filter parameters
+   */
+  getFilterParams(req, allowedFields = []) {
+    const filters = {};
+    const query = req.query;
+
+    Object.keys(query).forEach((key) => {
+      if (allowedFields.includes(key) && query[key]) {
+        filters[key] = query[key];
       }
     });
-    return where;
+
+    return filters;
+  }
+
+  /**
+   * Sanitize data by removing sensitive fields
+   * @param {Object} data - Data object
+   * @param {Array} sensitiveFields - Fields to remove
+   * @returns {Object} Sanitized data
+   */
+  sanitizeData(data, sensitiveFields = ["password", "token", "secret"]) {
+    const sanitized = { ...data };
+    sensitiveFields.forEach((field) => {
+      delete sanitized[field];
+    });
+    return sanitized;
+  }
+
+  /**
+   * Format success response
+   * @param {Object} res - Express response object
+   * @param {any} data - Response data
+   * @param {string} message - Success message
+   * @returns {Object} Formatted response
+   */
+  success(res, data, message = "Success") {
+    return this.ResponseHandler.success(res, data, message);
+  }
+
+  /**
+   * Format error response
+   * @param {Object} res - Express response object
+   * @param {string} message - Error message
+   * @param {number} statusCode - HTTP status code
+   * @returns {Object} Formatted error response
+   */
+  error(res, message, statusCode = 400) {
+    return this.ResponseHandler.error(res, message, statusCode);
+  }
+
+  /**
+   * Transform data using provided mapping
+   * @param {Object} data - Data to transform
+   * @param {Object} mapping - Field mapping
+   * @returns {Object} Transformed data
+   */
+  transformData(data, mapping) {
+    const transformed = {};
+    Object.entries(mapping).forEach(([newKey, oldKey]) => {
+      if (data[oldKey] !== undefined) {
+        transformed[newKey] = data[oldKey];
+      }
+    });
+    return transformed;
+  }
+
+  /**
+   * Format date fields in data
+   * @param {Object} data - Data object
+   * @param {Array} dateFields - Fields to format
+   * @param {string} format - Date format
+   * @returns {Object} Data with formatted dates
+   */
+  formatDates(
+    data,
+    dateFields = ["createdAt", "updatedAt"],
+    format = "YYYY-MM-DD HH:mm:ss"
+  ) {
+    const formatted = { ...data };
+    dateFields.forEach((field) => {
+      if (formatted[field]) {
+        formatted[field] = new Date(formatted[field]).toISOString();
+      }
+    });
+    return formatted;
+  }
+
+  /**
+   * Build search query for text fields
+   * @param {Object} searchParams - Search parameters
+   * @param {Array} searchableFields - Fields to search in
+   * @returns {Object} Sequelize where clause
+   */
+  buildSearchQuery(searchParams, searchableFields) {
+    if (!searchParams.q || !searchableFields.length) return {};
+
+    return {
+      [Op.or]: searchableFields.map((field) => ({
+        [field]: {
+          [Op.iLike]: `%${searchParams.q}%`,
+        },
+      })),
+    };
   }
 }
 
-module.exports = BaseController; 
+module.exports = BaseController;

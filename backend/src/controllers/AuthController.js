@@ -1,28 +1,32 @@
-const { User } = require('../models');
-const BaseController = require('./BaseController');
-const { logger } = require('../utils/logger');
-const bcrypt = require('bcryptjs');
-const jwt = require('jsonwebtoken');
-const { Op } = require('sequelize');
-const crypto = require('crypto');
-const twilio = require('twilio');
-const nodemailer = require('nodemailer');
+const { User } = require("../models");
+const BaseController = require("./BaseController");
+const { logger } = require("../utils/logger");
+const bcrypt = require("bcryptjs");
+const jwt = require("jsonwebtoken");
+const { Op } = require("sequelize");
+const crypto = require("crypto");
+const twilio = require("twilio");
+const nodemailer = require("nodemailer");
+const { ResponseHandler } = require("../utils/ResponseHandler");
+const userRepository = require("../repositories/UserRepository");
+// const { sendSMS } = require('../services/twilioService');
+const { sendEmail } = require("../services/emailService");
 
 class AuthController extends BaseController {
   constructor() {
-    super(User);
+    super();
     // Initialize Twilio client
-    this.twilioClient = new twilio(
-      process.env.TWILIO_ACCOUNT_SID,
-      process.env.TWILIO_AUTH_TOKEN
-    );
+    // this.twilioClient = new twilio(
+    //   process.env.TWILIO_ACCOUNT_SID,
+    //   process.env.TWILIO_AUTH_TOKEN
+    // );
     // Initialize email transporter
     this.transporter = nodemailer.createTransport({
-      service: 'gmail',
+      service: "gmail",
       auth: {
         user: process.env.EMAIL_USER,
-        pass: process.env.EMAIL_PASSWORD
-      }
+        pass: process.env.EMAIL_PASSWORD,
+      },
     });
   }
 
@@ -37,33 +41,22 @@ class AuthController extends BaseController {
         businessName,
         businessType,
         gstNumber,
-        address
+        address,
       } = req.body;
 
       console.log("request body=====>", req.body);
 
       // Check if user already exists
-      const existingUser = await User.findOne({
-        where: {
-          [Op.or]: [
-            { email },
-            { phone }
-          ]
-        }
-      });
-
+      const existingUser = await userRepository.findByEmail(email);
       if (existingUser) {
-        return this.ResponseHandler.conflict(
-          res,
-          'User with this email or phone already exists'
-        );
+        return this.error(res, "Email already registered", 400);
       }
 
       // Hash password
       const hashedPassword = await bcrypt.hash(password, 10);
 
       // Create user
-      const user = await User.create({
+      const user = await userRepository.create({
         name,
         email,
         password: hashedPassword,
@@ -72,19 +65,51 @@ class AuthController extends BaseController {
         businessName,
         businessType,
         gstNumber,
-        address
+        address,
       });
 
       // Generate token
-      const token = this.generateToken(user);
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "24h" }
+      );
 
-      logger.info('User registered successfully', { userId: user.id });
-      return this.ResponseHandler.created(res, {
-        user: this.sanitizeUser(user),
-        token
-      }, 'User registered successfully');
+      // TODO: Send welcome email
+      // await sendEmail({
+      //   to: email,
+      //   subject: "Welcome to SmartVyapar",
+      //   text: `Welcome ${name}! Your account has been created successfully.`,
+      // });
+
+      // TODO: Send welcome SMS
+      // await sendSMS({
+      //   to: phone,
+      //   body: `Welcome to SmartVyapar! Your account has been created successfully.`,
+      // });
+
+      logger.info("User registered successfully", { userId: user.id });
+
+      return this.success(
+        res,
+        {
+          user: {
+            id: user.id,
+            name: user.name,
+            email: user.email,
+            phone: user.phone,
+            role: user.role,
+            businessName: user.businessName,
+            businessType: user.businessType,
+            gstNumber: user.gstNumber,
+            address: user.address,
+          },
+          token,
+        },
+        "Registration successful"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error, "Failed to register user");
     }
   }
 
@@ -93,27 +118,52 @@ class AuthController extends BaseController {
       const { email, password } = req.body;
 
       // Find user
-      const user = await User.findOne({ where: { email } });
+      const user = await userRepository.findByEmail(email, {
+        attributes: { exclude: ["password"] },
+      });
+
       if (!user) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid email or password');
+        return ResponseHandler.notFound(res, "User not found");
       }
 
-      // Check password
+      // Verify password
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid email or password');
+        return ResponseHandler.unauthorized(res, "Invalid credentials");
+      }
+
+      // Check user status
+      if (user.status !== "active") {
+        return ResponseHandler.forbidden(res, "Account is not active");
       }
 
       // Generate token
-      const token = this.generateToken(user);
+      const token = jwt.sign(
+        { id: user.id, email: user.email, role: user.role },
+        process.env.JWT_SECRET,
+        { expiresIn: "24h" }
+      );
 
-      logger.info('User logged in successfully', { userId: user.id });
-      return this.ResponseHandler.success(res, {
-        user: this.sanitizeUser(user),
-        token
-      }, 'Login successful');
+      // Update last login
+      await userRepository.updateLastLogin(user.id);
+
+      logger.info("User logged in successfully", { userId: user.id });
+
+      return ResponseHandler.success(res, "Login successful", {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          businessName: user.businessName,
+          businessType: user.businessType,
+        },
+        token,
+      });
     } catch (error) {
-      return this.handleError(error, res);
+      logger.error("Login error:", error);
+      return this.handleError(res, error, "Login failed");
     }
   }
 
@@ -124,21 +174,31 @@ class AuthController extends BaseController {
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
-      const isValidPassword = await bcrypt.compare(currentPassword, user.password);
+      const isValidPassword = await bcrypt.compare(
+        currentPassword,
+        user.password
+      );
       if (!isValidPassword) {
-        return this.ResponseHandler.unauthorized(res, 'Current password is incorrect');
+        return this.ResponseHandler.unauthorized(
+          res,
+          "Current password is incorrect"
+        );
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await user.update({ password: hashedPassword });
 
-      logger.info('Password changed successfully', { userId });
-      return this.ResponseHandler.success(res, null, 'Password changed successfully');
+      logger.info("Password changed successfully", { userId });
+      return this.ResponseHandler.success(
+        res,
+        null,
+        "Password changed successfully"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -148,24 +208,28 @@ class AuthController extends BaseController {
 
       const user = await User.findOne({ where: { email } });
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
-      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetToken = crypto.randomBytes(32).toString("hex");
       const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
       await user.update({
         resetToken,
-        resetTokenExpiry
+        resetTokenExpiry,
       });
 
       // Send email with reset token
       await this.sendResetPasswordEmail(user.email, resetToken);
 
-      logger.info('Password reset token generated', { userId: user.id });
-      return this.ResponseHandler.success(res, null, 'Password reset instructions sent to your email');
+      logger.info("Password reset token generated", { userId: user.id });
+      return this.ResponseHandler.success(
+        res,
+        null,
+        "Password reset instructions sent to your email"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -176,25 +240,32 @@ class AuthController extends BaseController {
       const user = await User.findOne({
         where: {
           resetToken: token,
-          resetTokenExpiry: { [Op.gt]: new Date() }
-        }
+          resetTokenExpiry: { [Op.gt]: new Date() },
+        },
       });
 
       if (!user) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid or expired reset token');
+        return this.ResponseHandler.unauthorized(
+          res,
+          "Invalid or expired reset token"
+        );
       }
 
       const hashedPassword = await bcrypt.hash(newPassword, 10);
       await user.update({
         password: hashedPassword,
         resetToken: null,
-        resetTokenExpiry: null
+        resetTokenExpiry: null,
       });
 
-      logger.info('Password reset successfully', { userId: user.id });
-      return this.ResponseHandler.success(res, null, 'Password reset successfully');
+      logger.info("Password reset successfully", { userId: user.id });
+      return this.ResponseHandler.success(
+        res,
+        null,
+        "Password reset successfully"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -205,17 +276,20 @@ class AuthController extends BaseController {
       const user = await User.findOne({
         where: {
           resetToken: token,
-          resetTokenExpiry: { [Op.gt]: new Date() }
-        }
+          resetTokenExpiry: { [Op.gt]: new Date() },
+        },
       });
 
       if (!user) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid or expired reset token');
+        return this.ResponseHandler.unauthorized(
+          res,
+          "Invalid or expired reset token"
+        );
       }
 
-      return this.ResponseHandler.success(res, null, 'Token is valid');
+      return this.ResponseHandler.success(res, null, "Token is valid");
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -228,25 +302,25 @@ class AuthController extends BaseController {
 
       const user = await User.findOne({ where: { phone } });
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
       await user.update({
         otp,
-        otpExpiry
+        otpExpiry,
       });
 
       // Send OTP via SMS
       await this.twilioClient.messages.create({
         body: `Your OTP is: ${otp}`,
         to: phone,
-        from: process.env.TWILIO_PHONE_NUMBER
+        from: process.env.TWILIO_PHONE_NUMBER,
       });
 
-      logger.info('OTP sent successfully', { userId: user.id });
-      return this.ResponseHandler.success(res, null, 'OTP sent successfully');
+      logger.info("OTP sent successfully", { userId: user.id });
+      return this.ResponseHandler.success(res, null, "OTP sent successfully");
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -258,24 +332,28 @@ class AuthController extends BaseController {
         where: {
           phone,
           otp,
-          otpExpiry: { [Op.gt]: new Date() }
-        }
+          otpExpiry: { [Op.gt]: new Date() },
+        },
       });
 
       if (!user) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid or expired OTP');
+        return this.ResponseHandler.unauthorized(res, "Invalid or expired OTP");
       }
 
       await user.update({
         otp: null,
         otpExpiry: null,
-        isPhoneVerified: true
+        isPhoneVerified: true,
       });
 
-      logger.info('OTP verified successfully', { userId: user.id });
-      return this.ResponseHandler.success(res, null, 'OTP verified successfully');
+      logger.info("OTP verified successfully", { userId: user.id });
+      return this.ResponseHandler.success(
+        res,
+        null,
+        "OTP verified successfully"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -285,19 +363,19 @@ class AuthController extends BaseController {
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
-      const verificationToken = crypto.randomBytes(32).toString('hex');
+      const verificationToken = crypto.randomBytes(32).toString("hex");
       await user.update({ emailVerificationToken: verificationToken });
 
       // Send verification email
       await this.sendEmailVerification(user.email, verificationToken);
 
-      logger.info('Verification email sent', { userId });
-      return this.ResponseHandler.success(res, null, 'Verification email sent');
+      logger.info("Verification email sent", { userId });
+      return this.ResponseHandler.success(res, null, "Verification email sent");
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -306,22 +384,29 @@ class AuthController extends BaseController {
       const { token } = req.body;
 
       const user = await User.findOne({
-        where: { emailVerificationToken: token }
+        where: { emailVerificationToken: token },
       });
 
       if (!user) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid verification token');
+        return this.ResponseHandler.unauthorized(
+          res,
+          "Invalid verification token"
+        );
       }
 
       await user.update({
         emailVerificationToken: null,
-        isEmailVerified: true
+        isEmailVerified: true,
       });
 
-      logger.info('Email verified successfully', { userId: user.id });
-      return this.ResponseHandler.success(res, null, 'Email verified successfully');
+      logger.info("Email verified successfully", { userId: user.id });
+      return this.ResponseHandler.success(
+        res,
+        null,
+        "Email verified successfully"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -331,12 +416,12 @@ class AuthController extends BaseController {
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
       return this.ResponseHandler.success(res, this.sanitizeUser(user));
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -351,15 +436,19 @@ class AuthController extends BaseController {
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
       await user.update(updateData);
 
-      logger.info('Profile updated successfully', { userId });
-      return this.ResponseHandler.success(res, this.sanitizeUser(user), 'Profile updated successfully');
+      logger.info("Profile updated successfully", { userId });
+      return this.ResponseHandler.success(
+        res,
+        this.sanitizeUser(user),
+        "Profile updated successfully"
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -370,15 +459,19 @@ class AuthController extends BaseController {
 
       const user = await User.findByPk(userId);
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.notFound(res, "User not found");
       }
 
       await user.update({ is2FAEnabled: enabled });
 
-      logger.info('2FA status updated', { userId, enabled });
-      return this.ResponseHandler.success(res, null, `2FA ${enabled ? 'enabled' : 'disabled'} successfully`);
+      logger.info("2FA status updated", { userId, enabled });
+      return this.ResponseHandler.success(
+        res,
+        null,
+        `2FA ${enabled ? "enabled" : "disabled"} successfully`
+      );
     } catch (error) {
-      return this.handleError(error, res);
+      return this.handleError(res, error);
     }
   }
 
@@ -387,10 +480,10 @@ class AuthController extends BaseController {
       {
         id: user.id,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_SECRET,
-      { expiresIn: '24h' }
+      { expiresIn: "24h" }
     );
   }
 
@@ -409,12 +502,12 @@ class AuthController extends BaseController {
     const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
     await this.transporter.sendMail({
       to: email,
-      subject: 'Password Reset Request',
+      subject: "Password Reset Request",
       html: `
         <p>You requested a password reset</p>
         <p>Click this <a href="${resetUrl}">link</a> to reset your password</p>
         <p>If you didn't request this, please ignore this email</p>
-      `
+      `,
     });
   }
 
@@ -422,13 +515,13 @@ class AuthController extends BaseController {
     const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
     await this.transporter.sendMail({
       to: email,
-      subject: 'Email Verification',
+      subject: "Email Verification",
       html: `
         <p>Please verify your email address</p>
         <p>Click this <a href="${verificationUrl}">link</a> to verify your email</p>
-      `
+      `,
     });
   }
 }
 
-module.exports = AuthController; 
+module.exports = new AuthController();

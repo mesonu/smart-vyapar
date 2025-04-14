@@ -1,9 +1,15 @@
 const express = require('express');
 const router = express.Router();
-const authController = require('../controllers/AuthController');
+const AuthController = require('../controllers/AuthController');
 const { validateRequest } = require('../middleware/validation');
 const { auth } = require('../middleware/auth');
-
+// const {
+//   registerSchema,
+//   loginSchema,
+//   updateProfileSchema,
+//   changePasswordSchema,
+//   userIdSchema
+// } = require('../../../bkp/userValidation');
 
 /**
  * @swagger
@@ -39,15 +45,17 @@ const { auth } = require('../middleware/auth');
  *           description: The user's status
  */
 
+
+
 // Public routes
-router.post('/register', authController.register);
-router.post('/login',  authController.login);
+// router.post('/register', validateRequest(registerSchema), (req, res) => authController.register(req, res));
+// router.post('/login', validateRequest(loginSchema), (req, res) => authController.login(req, res));
 
 // Protected routes
 // router.use(auth);
-router.get('/profile', authController.getProfile);
-router.put('/profile',  authController.updateProfile);
-router.post('/change-password',  authController.changePassword);
+router.get('/profile', (req, res) => AuthController.getProfile(req, res));
+// router.put('/profile', validateRequest(updateProfileSchema), (req, res) => AuthController.updateProfile(req, res));
+// router.post('/change-password', validateRequest(changePasswordSchema), (req, res) => AuthController.changePassword(req, res));
 
 // /**
 //  * @swagger
@@ -65,7 +73,7 @@ router.post('/change-password',  authController.changePassword);
 //  *               items:
 //  *                 $ref: '#/components/schemas/User'
 //  */
-// router.get('/', authController.getAllUsers);
+// router.get('/', (req, res) => AuthController.getAllUsers(req, res));
 
 /**
  * @swagger
@@ -90,7 +98,7 @@ router.post('/change-password',  authController.changePassword);
  *       404:
  *         description: The user was not found
  */
-// router.get('/:id', validateRequest(userIdSchema), authController.getUserById);
+// router.get('/:id', validateRequest(userIdSchema), (req, res) => AuthController.getUserById(req, res));
 
 /**
  * @swagger
@@ -114,7 +122,7 @@ router.post('/change-password',  authController.changePassword);
  *       500:
  *         description: Some server error
  */
-router.post('/', authController.register);
+router.post('/', AuthController.register);
 
 /**
  * @swagger
@@ -147,8 +155,8 @@ router.post('/', authController.register);
  *       500:
  *         description: Some error happened
  */
-// router.put('/:id', validateRequest(userIdSchema), validateRequest(updateProfileSchema), authController.updateUser);
+// router.put('/:id', validateRequest(userIdSchema), validateRequest(updateProfileSchema), (req, res) => AuthController.updateUser(req, res));
 
-// router.delete('/:id', validateRequest(userIdSchema), authController.deleteUser);
+// router.delete('/:id', validateRequest(userIdSchema), (req, res) => AuthController.deleteUser(req, res));
 
 module.exports = router; 

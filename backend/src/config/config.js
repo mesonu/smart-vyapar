@@ -51,13 +51,25 @@ module.exports = {
     keySecret: process.env.RAZORPAY_KEY_SECRET || '',
     webhookSecret: process.env.RAZORPAY_WEBHOOK_SECRET || ''
   },
+  twilio: {
+    accountSid: process.env.TWILIO_ACCOUNT_SID,
+    authToken: process.env.TWILIO_AUTH_TOKEN,
+    phoneNumber: process.env.TWILIO_PHONE_NUMBER
+  },
   ROLES:{
     ADMIN: 'admin', // admin
     CUSTOMER: 'customer', // customer
     USER:'user', // business user 
     MANAGER: 'manager', // infuture may be 
     STAFF: 'staff' // infuture may be 
-  } 
+  },
+  email: {
+    host: process.env.EMAIL_HOST,
+    port: process.env.EMAIL_PORT,
+    user: process.env.EMAIL_USER,
+    pass: process.env.EMAIL_PASS,
+    fromName: process.env.EMAIL_FROM_NAME || 'Your App Name'
+  },
   //databaseUrl: process.env.DATABASE_URL || 'postgres://postgres:postgres@localhost:5432/invoice_system'
 }
 
