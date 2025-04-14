@@ -26,7 +26,7 @@ class AuthController extends BaseController {
     });
   }
 
-  register = async (req, res) => {
+  async register(req, res) {
     try {
       const {
         name,
@@ -86,9 +86,9 @@ class AuthController extends BaseController {
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  login = async (req, res) => {
+  async login(req, res) {
     try {
       const { email, password } = req.body;
 
@@ -98,7 +98,7 @@ class AuthController extends BaseController {
         return this.ResponseHandler.unauthorized(res, 'Invalid email or password');
       }
 
-      // Verify password
+      // Check password
       const isValidPassword = await bcrypt.compare(password, user.password);
       if (!isValidPassword) {
         return this.ResponseHandler.unauthorized(res, 'Invalid email or password');
@@ -115,9 +115,9 @@ class AuthController extends BaseController {
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  changePassword = async (req, res) => {
+  async changePassword(req, res) {
     try {
       const { currentPassword, newPassword } = req.body;
       const userId = req.user.id;
@@ -127,16 +127,12 @@ class AuthController extends BaseController {
         return this.ResponseHandler.notFound(res, 'User not found');
       }
 
-      // Verify current password
       const isValidPassword = await bcrypt.compare(currentPassword, user.password);
       if (!isValidPassword) {
         return this.ResponseHandler.unauthorized(res, 'Current password is incorrect');
       }
 
-      // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      // Update password
       await user.update({ password: hashedPassword });
 
       logger.info('Password changed successfully', { userId });
@@ -144,9 +140,9 @@ class AuthController extends BaseController {
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  resetPassword = async (req, res) => {
+  async forgotPassword(req, res) {
     try {
       const { email } = req.body;
 
@@ -155,157 +151,109 @@ class AuthController extends BaseController {
         return this.ResponseHandler.notFound(res, 'User not found');
       }
 
-      // Generate reset token
-      // const resetToken = jwt.sign(
-      //   { id: user.id, type: 'reset' },
-      //   process.env.JWT_SECRET,
-      //   { expiresIn: '1h' }
-      // );
+      const resetToken = crypto.randomBytes(32).toString('hex');
+      const resetTokenExpiry = new Date(Date.now() + 3600000); // 1 hour
 
-      const resetToken =  this.generateToken(user);
+      await user.update({
+        resetToken,
+        resetTokenExpiry
+      });
 
-      // TODO: Send reset email with token
-      // For now, we'll just return the token
-      // In production, this should be sent via email
+      // Send email with reset token
+      await this.sendResetPasswordEmail(user.email, resetToken);
 
       logger.info('Password reset token generated', { userId: user.id });
-      return this.ResponseHandler.success(res, { resetToken }, 'Password reset token generated');
+      return this.ResponseHandler.success(res, null, 'Password reset instructions sent to your email');
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  verifyResetToken = async (req, res) => {
+  async resetPassword(req, res) {
     try {
       const { token, newPassword } = req.body;
 
-      // Verify token
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
-      if (decoded.type !== 'reset') {
-        return this.ResponseHandler.unauthorized(res, 'Invalid reset token');
-      }
+      const user = await User.findOne({
+        where: {
+          resetToken: token,
+          resetTokenExpiry: { [Op.gt]: new Date() }
+        }
+      });
 
-      const user = await User.findByPk(decoded.id);
       if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
+        return this.ResponseHandler.unauthorized(res, 'Invalid or expired reset token');
       }
 
-      // Hash new password
       const hashedPassword = await bcrypt.hash(newPassword, 10);
-
-      // Update password
-      await user.update({ password: hashedPassword });
+      await user.update({
+        password: hashedPassword,
+        resetToken: null,
+        resetTokenExpiry: null
+      });
 
       logger.info('Password reset successfully', { userId: user.id });
       return this.ResponseHandler.success(res, null, 'Password reset successfully');
     } catch (error) {
-      if (error.name === 'JsonWebTokenError') {
+      return this.handleError(error, res);
+    }
+  }
+
+  async verifyResetToken(req, res) {
+    try {
+      const { token } = req.body;
+
+      const user = await User.findOne({
+        where: {
+          resetToken: token,
+          resetTokenExpiry: { [Op.gt]: new Date() }
+        }
+      });
+
+      if (!user) {
         return this.ResponseHandler.unauthorized(res, 'Invalid or expired reset token');
       }
-      return this.handleError(error, res);
-    }
-  };
 
-  getProfile = async (req, res) => {
-    try {
-      const user = await User.findByPk(req.user.id, {
-        attributes: { exclude: ['password'] }
-      });
-
-      if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
-      }
-
-      return this.ResponseHandler.success(res, this.sanitizeUser(user));
+      return this.ResponseHandler.success(res, null, 'Token is valid');
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  updateProfile = async (req, res) => {
-    try {
-      const { firstName, lastName, phone } = req.body;
-      const userId = req.user.id;
-
-      const user = await User.findByPk(userId);
-      if (!user) {
-        return this.ResponseHandler.notFound(res, 'User not found');
-      }
-
-      const updatedUser = await user.update({
-        firstName,
-        lastName,
-        phone
-      });
-
-      logger.info('Profile updated successfully', { userId });
-      return this.ResponseHandler.success(res, {
-        user: this.sanitizeUser(updatedUser)
-      }, 'Profile updated successfully');
-    } catch (error) {
-      return this.handleError(error, res);
-    }
-  };
-
-  generateToken = (user) => {
-    const {secret, expiresIn} = this.config.jwt;
-    return jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role
-      },
-      secret,
-      { expiresIn: expiresIn }
-    );
-  };
-
-  sanitizeUser = (user) => {
-    return {
-      id: user.id,
-      name: user.name,
-      email: user.email,
-      role: user.role,
-      phone: user.phone,
-      businessName: user?.businessName,
-      businessType: user?.businessType,
-      gstNumber: user?.gstNumber,
-      address: user.address,
-      created_at: user.created_at,
-      updated_at: user.updated_at
-    };
-  };
-
-  // Send OTP via SMS
-  sendOTP = async (req, res) => {
+  async sendOTP(req, res) {
     try {
       const { phone } = req.body;
-      const otp = crypto.randomInt(100000, 999999).toString();
-      const expiry = new Date(Date.now() + 10 * 60 * 1000); // 10 minutes
 
-      // Store OTP in user record
-      await User.update(
-        { otp, otpExpiry: expiry },
-        { where: { phone } }
-      );
+      const otp = Math.floor(100000 + Math.random() * 900000).toString();
+      const otpExpiry = new Date(Date.now() + 600000); // 10 minutes
 
-      // Send SMS via Twilio
+      const user = await User.findOne({ where: { phone } });
+      if (!user) {
+        return this.ResponseHandler.notFound(res, 'User not found');
+      }
+
+      await user.update({
+        otp,
+        otpExpiry
+      });
+
+      // Send OTP via SMS
       await this.twilioClient.messages.create({
-        body: `Your SmartVyapar OTP is: ${otp}. Valid for 10 minutes.`,
+        body: `Your OTP is: ${otp}`,
         to: phone,
         from: process.env.TWILIO_PHONE_NUMBER
       });
 
-      return this.ResponseHandler.success(res, { message: 'OTP sent successfully' });
+      logger.info('OTP sent successfully', { userId: user.id });
+      return this.ResponseHandler.success(res, null, 'OTP sent successfully');
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  // Verify OTP
-  verifyOTP = async (req, res) => {
+  async verifyOTP(req, res) {
     try {
       const { phone, otp } = req.body;
+
       const user = await User.findOne({
         where: {
           phone,
@@ -318,93 +266,169 @@ class AuthController extends BaseController {
         return this.ResponseHandler.unauthorized(res, 'Invalid or expired OTP');
       }
 
-      // Clear OTP after successful verification
-      await user.update({ otp: null, otpExpiry: null });
-
-      return this.ResponseHandler.success(res, { message: 'OTP verified successfully' });
-    } catch (error) {
-      return this.handleError(error, res);
-    }
-  };
-
-  // Send verification email
-  sendVerificationEmail = async (req, res) => {
-    try {
-      const { email } = req.body;
-      const token = crypto.randomBytes(32).toString('hex');
-      const expiry = new Date(Date.now() + 24 * 60 * 60 * 1000); // 24 hours
-
-      await User.update(
-        { emailToken: token, emailTokenExpiry: expiry },
-        { where: { email } }
-      );
-
-      const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
-      
-      await this.transporter.sendMail({
-        to: email,
-        subject: 'Verify your SmartVyapar account',
-        html: `
-          <h1>Welcome to SmartVyapar!</h1>
-          <p>Please click the link below to verify your email:</p>
-          <a href="${verificationUrl}">Verify Email</a>
-          <p>This link will expire in 24 hours.</p>
-        `
-      });
-
-      return this.ResponseHandler.success(res, { message: 'Verification email sent' });
-    } catch (error) {
-      return this.handleError(error, res);
-    }
-  };
-
-  // Verify email
-  verifyEmail = async (req, res) => {
-    try {
-      const { token } = req.body;
-      const user = await User.findOne({
-        where: {
-          emailToken: token,
-          emailTokenExpiry: { [Op.gt]: new Date() }
-        }
-      });
-
-      if (!user) {
-        return this.ResponseHandler.unauthorized(res, 'Invalid or expired token');
-      }
-
       await user.update({
-        emailVerified: true,
-        emailToken: null,
-        emailTokenExpiry: null
+        otp: null,
+        otpExpiry: null,
+        isPhoneVerified: true
       });
 
-      return this.ResponseHandler.success(res, { message: 'Email verified successfully' });
+      logger.info('OTP verified successfully', { userId: user.id });
+      return this.ResponseHandler.success(res, null, 'OTP verified successfully');
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
 
-  // Enable/disable 2FA
-  toggle2FA = async (req, res) => {
+  async sendVerificationEmail(req, res) {
     try {
-      const { userId } = req.params;
-      const { enable } = req.body;
+      const userId = req.user.id;
 
       const user = await User.findByPk(userId);
       if (!user) {
         return this.ResponseHandler.notFound(res, 'User not found');
       }
 
-      await user.update({ twoFactorEnabled: enable });
+      const verificationToken = crypto.randomBytes(32).toString('hex');
+      await user.update({ emailVerificationToken: verificationToken });
 
-      return this.ResponseHandler.success(res, {
-        message: `2FA ${enable ? 'enabled' : 'disabled'} successfully`
-      });
+      // Send verification email
+      await this.sendEmailVerification(user.email, verificationToken);
+
+      logger.info('Verification email sent', { userId });
+      return this.ResponseHandler.success(res, null, 'Verification email sent');
     } catch (error) {
       return this.handleError(error, res);
     }
-  };
+  }
+
+  async verifyEmail(req, res) {
+    try {
+      const { token } = req.body;
+
+      const user = await User.findOne({
+        where: { emailVerificationToken: token }
+      });
+
+      if (!user) {
+        return this.ResponseHandler.unauthorized(res, 'Invalid verification token');
+      }
+
+      await user.update({
+        emailVerificationToken: null,
+        isEmailVerified: true
+      });
+
+      logger.info('Email verified successfully', { userId: user.id });
+      return this.ResponseHandler.success(res, null, 'Email verified successfully');
+    } catch (error) {
+      return this.handleError(error, res);
+    }
+  }
+
+  async getProfile(req, res) {
+    try {
+      const userId = req.user.id;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return this.ResponseHandler.notFound(res, 'User not found');
+      }
+
+      return this.ResponseHandler.success(res, this.sanitizeUser(user));
+    } catch (error) {
+      return this.handleError(error, res);
+    }
+  }
+
+  async updateProfile(req, res) {
+    try {
+      const userId = req.user.id;
+      const updateData = req.body;
+
+      // Remove sensitive fields
+      delete updateData.password;
+      delete updateData.role;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return this.ResponseHandler.notFound(res, 'User not found');
+      }
+
+      await user.update(updateData);
+
+      logger.info('Profile updated successfully', { userId });
+      return this.ResponseHandler.success(res, this.sanitizeUser(user), 'Profile updated successfully');
+    } catch (error) {
+      return this.handleError(error, res);
+    }
+  }
+
+  async toggle2FA(req, res) {
+    try {
+      const { userId } = req.params;
+      const { enabled } = req.body;
+
+      const user = await User.findByPk(userId);
+      if (!user) {
+        return this.ResponseHandler.notFound(res, 'User not found');
+      }
+
+      await user.update({ is2FAEnabled: enabled });
+
+      logger.info('2FA status updated', { userId, enabled });
+      return this.ResponseHandler.success(res, null, `2FA ${enabled ? 'enabled' : 'disabled'} successfully`);
+    } catch (error) {
+      return this.handleError(error, res);
+    }
+  }
+
+  generateToken(user) {
+    return jwt.sign(
+      {
+        id: user.id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '24h' }
+    );
+  }
+
+  sanitizeUser(user) {
+    const sanitized = user.toJSON();
+    delete sanitized.password;
+    delete sanitized.resetToken;
+    delete sanitized.resetTokenExpiry;
+    delete sanitized.otp;
+    delete sanitized.otpExpiry;
+    delete sanitized.emailVerificationToken;
+    return sanitized;
+  }
+
+  async sendResetPasswordEmail(email, token) {
+    const resetUrl = `${process.env.FRONTEND_URL}/reset-password?token=${token}`;
+    await this.transporter.sendMail({
+      to: email,
+      subject: 'Password Reset Request',
+      html: `
+        <p>You requested a password reset</p>
+        <p>Click this <a href="${resetUrl}">link</a> to reset your password</p>
+        <p>If you didn't request this, please ignore this email</p>
+      `
+    });
+  }
+
+  async sendEmailVerification(email, token) {
+    const verificationUrl = `${process.env.FRONTEND_URL}/verify-email?token=${token}`;
+    await this.transporter.sendMail({
+      to: email,
+      subject: 'Email Verification',
+      html: `
+        <p>Please verify your email address</p>
+        <p>Click this <a href="${verificationUrl}">link</a> to verify your email</p>
+      `
+    });
+  }
 }
 
-module.exports = new AuthController(); 
+module.exports = AuthController; 

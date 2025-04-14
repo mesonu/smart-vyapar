@@ -1,17 +1,24 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Container, Paper } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Paper,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import authService from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Signup: React.FC = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    password: '',
-    confirmPassword: '',
+    name: "",
+    email: "",
+    password: "",
+    confirmPassword: "",
   });
-  const [error, setError] = useState('');
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { register } = useAuth();
 
@@ -23,7 +30,7 @@ const Signup: React.FC = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (formData.password !== formData.confirmPassword) {
-      setError('Passwords do not match');
+      setError("Passwords do not match");
       return;
     }
     try {
@@ -32,9 +39,9 @@ const Signup: React.FC = () => {
         email: formData.email,
         password: formData.password,
       });
-      navigate('/login');
+      navigate("/login");
     } catch (err) {
-      setError('Registration failed. Please try again.');
+      setError("Registration failed. Please try again.");
     }
   };
 
@@ -106,4 +113,4 @@ const Signup: React.FC = () => {
   );
 };
 
-export default Signup; 
+export default Signup;

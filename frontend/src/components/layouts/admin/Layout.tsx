@@ -1,8 +1,15 @@
-import React from 'react';
-import { Box, AppBar, Toolbar, Typography, Button, Container } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import { useAuth } from '../contexts/AuthContext';
-import { Outlet } from 'react-router-dom';
+import React from "react";
+import {
+  Box,
+  AppBar,
+  Toolbar,
+  Typography,
+  Button,
+  Container,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import { useAuth } from "../../../contexts/AuthContext";
+import { Outlet } from "react-router-dom";
 
 const Layout: React.FC = () => {
   const navigate = useNavigate();
@@ -11,23 +18,23 @@ const Layout: React.FC = () => {
   const handleLogout = async () => {
     try {
       await logout();
-      navigate('/login');
+      navigate("/login");
     } catch (error) {
-      console.error('Logout failed:', error);
+      console.error("Logout failed:", error);
     }
   };
 
   return (
-    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+    <Box sx={{ display: "flex", flexDirection: "column", minHeight: "100vh" }}>
       <AppBar position="static">
         <Toolbar>
           <Typography variant="h6" component="div" sx={{ flexGrow: 1 }}>
             Dashboard
           </Typography>
-          <Button color="inherit" onClick={() => navigate('/profile')}>
+          <Button color="inherit" onClick={() => navigate("/profile")}>
             Profile
           </Button>
-          <Button color="inherit" onClick={() => navigate('/settings')}>
+          <Button color="inherit" onClick={() => navigate("/settings")}>
             Settings
           </Button>
           <Button color="inherit" onClick={handleLogout}>
@@ -42,4 +49,4 @@ const Layout: React.FC = () => {
   );
 };
 
-export default Layout; 
+export default Layout;

@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Container,
@@ -9,32 +9,34 @@ import {
   Button,
   Alert,
   Snackbar,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Phone as PhoneIcon,
   Email as EmailIcon,
   LocationOn as LocationIcon,
   AccessTime as AccessTimeIcon,
-} from '@mui/icons-material';
-import LandingNav from '../components/LandingNav';
-import LandingFooter from '../components/LandingFooter';
+} from "@mui/icons-material";
+import LandingNav from "../components/home/LandingNav";
+import LandingFooter from "../components/home/LandingFooter";
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({
-    name: '',
-    email: '',
-    phone: '',
-    subject: '',
-    message: '',
+    name: "",
+    email: "",
+    phone: "",
+    subject: "",
+    message: "",
   });
 
   const [snackbar, setSnackbar] = useState({
     open: false,
-    message: '',
-    severity: 'success' as 'success' | 'error',
+    message: "",
+    severity: "success" as "success" | "error",
   });
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
+  const handleChange = (
+    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>
+  ) => {
     const { name, value } = e.target;
     setFormData((prev) => ({
       ...prev,
@@ -45,18 +47,18 @@ const ContactUs = () => {
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     // Here you would typically send the form data to your backend
-    console.log('Form submitted:', formData);
+    console.log("Form submitted:", formData);
     setSnackbar({
       open: true,
-      message: 'Thank you for your message. We will get back to you soon!',
-      severity: 'success',
+      message: "Thank you for your message. We will get back to you soon!",
+      severity: "success",
     });
     setFormData({
-      name: '',
-      email: '',
-      phone: '',
-      subject: '',
-      message: '',
+      name: "",
+      email: "",
+      phone: "",
+      subject: "",
+      message: "",
     });
   };
 
@@ -67,34 +69,37 @@ const ContactUs = () => {
   const contactInfo = [
     {
       icon: <PhoneIcon sx={{ fontSize: 40 }} />,
-      title: 'Phone',
-      details: ['+1 (555) 123-4567', '+1 (555) 987-6543'],
+      title: "Phone",
+      details: ["+1 (555) 123-4567", "+1 (555) 987-6543"],
     },
     {
       icon: <EmailIcon sx={{ fontSize: 40 }} />,
-      title: 'Email',
-      details: ['support@smartshop.com', 'sales@smartshop.com'],
+      title: "Email",
+      details: ["support@smartshop.com", "sales@smartshop.com"],
     },
     {
       icon: <LocationIcon sx={{ fontSize: 40 }} />,
-      title: 'Address',
-      details: ['123 Business Avenue', 'Suite 456', 'New York, NY 10001'],
+      title: "Address",
+      details: ["123 Business Avenue", "Suite 456", "New York, NY 10001"],
     },
     {
       icon: <AccessTimeIcon sx={{ fontSize: 40 }} />,
-      title: 'Business Hours',
-      details: ['Monday - Friday: 9:00 AM - 6:00 PM', 'Saturday: 10:00 AM - 4:00 PM'],
+      title: "Business Hours",
+      details: [
+        "Monday - Friday: 9:00 AM - 6:00 PM",
+        "Saturday: 10:00 AM - 4:00 PM",
+      ],
     },
   ];
 
   return (
-    <Box 
-      sx={{ 
-        minHeight: '100vh', 
-        display: 'flex', 
-        flexDirection: 'column',
-        width: '100vw',
-        overflowX: 'hidden',
+    <Box
+      sx={{
+        minHeight: "100vh",
+        display: "flex",
+        flexDirection: "column",
+        width: "100vw",
+        overflowX: "hidden",
         margin: 0,
         padding: 0,
       }}
@@ -106,16 +111,19 @@ const ContactUs = () => {
         <Box
           sx={{
             py: 12,
-            background: 'linear-gradient(135deg, #1976d2 0%, #2196f3 100%)',
-            color: 'white',
-            textAlign: 'center',
+            background: "linear-gradient(135deg, #1976d2 0%, #2196f3 100%)",
+            color: "white",
+            textAlign: "center",
           }}
         >
           <Container maxWidth="lg">
             <Typography variant="h2" sx={{ fontWeight: 800, mb: 3 }}>
               Contact Us
             </Typography>
-            <Typography variant="h5" sx={{ maxWidth: 800, mx: 'auto', opacity: 0.9 }}>
+            <Typography
+              variant="h5"
+              sx={{ maxWidth: 800, mx: "auto", opacity: 0.9 }}
+            >
               We're here to help and answer any questions you might have
             </Typography>
           </Container>
@@ -130,22 +138,30 @@ const ContactUs = () => {
                   elevation={0}
                   sx={{
                     p: 3,
-                    height: '100%',
-                    textAlign: 'center',
+                    height: "100%",
+                    textAlign: "center",
                     borderRadius: 4,
-                    transition: 'transform 0.3s ease',
-                    '&:hover': {
-                      transform: 'translateY(-8px)',
+                    transition: "transform 0.3s ease",
+                    "&:hover": {
+                      transform: "translateY(-8px)",
                       boxShadow: 3,
                     },
                   }}
                 >
-                  <Box sx={{ color: 'primary.main', mb: 2 }}>{info.icon}</Box>
-                  <Typography variant="h6" gutterBottom sx={{ fontWeight: 700 }}>
+                  <Box sx={{ color: "primary.main", mb: 2 }}>{info.icon}</Box>
+                  <Typography
+                    variant="h6"
+                    gutterBottom
+                    sx={{ fontWeight: 700 }}
+                  >
                     {info.title}
                   </Typography>
                   {info.details.map((detail, idx) => (
-                    <Typography key={idx} variant="body1" color="text.secondary">
+                    <Typography
+                      key={idx}
+                      variant="body1"
+                      color="text.secondary"
+                    >
                       {detail}
                     </Typography>
                   ))}
@@ -156,22 +172,27 @@ const ContactUs = () => {
         </Container>
 
         {/* Contact Form Section */}
-        <Box sx={{ bgcolor: '#f8f9fa', py: 8 }}>
+        <Box sx={{ bgcolor: "#f8f9fa", py: 8 }}>
           <Container maxWidth="lg">
             <Grid container spacing={6}>
               <Grid item xs={12} md={6}>
                 <Typography variant="h3" gutterBottom sx={{ fontWeight: 700 }}>
                   Get in Touch
                 </Typography>
-                <Typography variant="body1" paragraph sx={{ color: 'text.secondary', mb: 4 }}>
-                  Have a question or need assistance? Fill out the form below and we'll get back to you as soon as possible.
+                <Typography
+                  variant="body1"
+                  paragraph
+                  sx={{ color: "text.secondary", mb: 4 }}
+                >
+                  Have a question or need assistance? Fill out the form below
+                  and we'll get back to you as soon as possible.
                 </Typography>
                 <Box
                   component="form"
                   onSubmit={handleSubmit}
                   sx={{
-                    display: 'flex',
-                    flexDirection: 'column',
+                    display: "flex",
+                    flexDirection: "column",
                     gap: 3,
                   }}
                 >
@@ -224,7 +245,7 @@ const ContactUs = () => {
                     sx={{
                       py: 1.5,
                       px: 4,
-                      fontSize: '1.1rem',
+                      fontSize: "1.1rem",
                       fontWeight: 600,
                     }}
                   >
@@ -235,11 +256,11 @@ const ContactUs = () => {
               <Grid item xs={12} md={6}>
                 <Box
                   sx={{
-                    width: '100%',
-                    height: '100%',
+                    width: "100%",
+                    height: "100%",
                     minHeight: 400,
                     borderRadius: 4,
-                    overflow: 'hidden',
+                    overflow: "hidden",
                   }}
                 >
                   <iframe
@@ -262,9 +283,13 @@ const ContactUs = () => {
         open={snackbar.open}
         autoHideDuration={6000}
         onClose={handleCloseSnackbar}
-        anchorOrigin={{ vertical: 'bottom', horizontal: 'center' }}
+        anchorOrigin={{ vertical: "bottom", horizontal: "center" }}
       >
-        <Alert onClose={handleCloseSnackbar} severity={snackbar.severity} sx={{ width: '100%' }}>
+        <Alert
+          onClose={handleCloseSnackbar}
+          severity={snackbar.severity}
+          sx={{ width: "100%" }}
+        >
           {snackbar.message}
         </Alert>
       </Snackbar>
@@ -274,4 +299,4 @@ const ContactUs = () => {
   );
 };
 
-export default ContactUs; 
+export default ContactUs;

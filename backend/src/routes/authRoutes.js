@@ -10,6 +10,10 @@ const {
     verifyResetTokenSchema,
     sendOTPSchema,
     verifyOTPSchema,
+    verifyEmailSchema,
+    changePasswordSchema,
+    updateProfileSchema,
+    toggle2FASchema
 } = require('../validations/auth/auth');
 
 const {
@@ -30,33 +34,37 @@ const {
     AppError  
 } = require('../middleware/index');
 
-// Routes
-router.post('/register', validateRequest(registerSchema), AuthController.register);
-router.post('/login', validateRequest(loginSchema), AuthController.login);
-// router.post('/logout', AuthController.logout);
-// router.get('/me', AuthController.getCurrentUser);
+// Create an instance of AuthController
+const authController = new AuthController();
 
 // Public routes
-router.post('/forgot-password', AuthController.forgotPassword);
-router.post('/reset-password', validateRequest(resetPasswordSchema), AuthController.resetPassword);
-router.post('/verify-reset-token', validateRequest(verifyResetTokenSchema), AuthController.verifyResetToken);
+router.post('/register', validateRequest(registerSchema), (req, res) => authController.register(req, res));
+router.post('/login', validateRequest(loginSchema), (req, res) => authController.login(req, res));
+router.post('/logout', (req, res) => authController.logout(req, res));
+router.get('/me', (req, res) => authController.getCurrentUser(req, res));
+
+// Password reset routes
+router.post('/forgot-password', (req, res) => authController.forgotPassword(req, res));
+router.post('/reset-password', validateRequest(resetPasswordSchema), (req, res) => authController.resetPassword(req, res));
+router.post('/verify-reset-token', validateRequest(verifyResetTokenSchema), (req, res) => authController.verifyResetToken(req, res));
 
 // OTP routes
-router.post('/send-otp', validateRequest(sendOTPSchema), AuthController.sendOTP);
-router.post('/verify-otp', validateRequest(verifyOTPSchema), AuthController.verifyOTP);
+router.post('/send-otp', validateRequest(sendOTPSchema), (req, res) => authController.sendOTP(req, res));
+router.post('/verify-otp', validateRequest(verifyOTPSchema), (req, res) => authController.verifyOTP(req, res));
 
 // Email verification routes
-router.post('/send-verification-email', AuthController.sendVerificationEmail);
-router.post('/verify-email', validateRequest(verifyEmailSchema), AuthController.verifyEmail);
+router.post('/send-verification-email', (req, res) => authController.sendVerificationEmail(req, res));
+router.post('/verify-email', validateRequest(verifyEmailSchema), (req, res) => authController.verifyEmail(req, res));
 
 // Protected routes
-router.use(checkRole([ROLES.ADMIN, ROLES.USER]));
+router.use(auth); // Add authentication middleware first
+router.use(checkRole([ROLES.ADMIN, ROLES.USER])); // Then check role
 
-router.post('/change-password', validateRequest(changePasswordSchema), AuthController.changePassword);
-router.get('/profile', AuthController.getProfile);
-router.put('/profile', validateRequest(updateProfileSchema), AuthController.updateProfile);
+router.post('/change-password', validateRequest(changePasswordSchema), (req, res) => authController.changePassword(req, res));
+router.get('/profile', (req, res) => authController.getProfile(req, res));
+router.put('/profile', validateRequest(updateProfileSchema), (req, res) => authController.updateProfile(req, res));
 
 // 2FA routes (admin only)
-router.post('/2fa/:userId', checkRole([ROLES.ADMIN]), validateRequest(toggle2FASchema), AuthController.toggle2FA);
+router.post('/2fa/:userId', checkRole([ROLES.ADMIN]), validateRequest(toggle2FASchema), (req, res) => authController.toggle2FA(req, res));
 
 module.exports = router; 

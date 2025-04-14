@@ -1,5 +1,5 @@
-import { useState } from 'react';
-import { Outlet, useNavigate, useLocation } from 'react-router-dom';
+import React, { useState } from "react";
+import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
   CssBaseline,
@@ -14,7 +14,7 @@ import {
   ListItemText,
   useTheme,
   useMediaQuery,
-} from '@mui/material';
+} from "@mui/material";
 import {
   Menu as MenuIcon,
   Dashboard,
@@ -23,23 +23,23 @@ import {
   Mic,
   Analytics,
   Gavel,
-} from '@mui/icons-material';
+} from "@mui/icons-material";
 
 const drawerWidth = 240;
 
 const menuItems = [
-  { text: 'Dashboard', icon: <Dashboard />, path: '/dashboard' },
-  { text: 'Inventory', icon: <Inventory />, path: '/inventory' },
-  { text: 'Billing', icon: <Receipt />, path: '/billing' },
-  { text: 'Voice Commands', icon: <Mic />, path: '/voice' },
-  { text: 'Analytics', icon: <Analytics />, path: '/analytics' },
-  { text: 'GST Compliance', icon: <Gavel />, path: '/gst' },
+  { text: "Dashboard", icon: <Dashboard />, path: "/dashboard" },
+  { text: "Inventory", icon: <Inventory />, path: "/inventory" },
+  { text: "Billing", icon: <Receipt />, path: "/billing" },
+  { text: "Voice Commands", icon: <Mic />, path: "/voice" },
+  { text: "Analytics", icon: <Analytics />, path: "/analytics" },
+  { text: "GST Compliance", icon: <Gavel />, path: "/gst" },
 ];
 
 const DashboardLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -71,7 +71,7 @@ const DashboardLayout = () => {
   );
 
   return (
-    <Box sx={{ display: 'flex' }}>
+    <Box sx={{ display: "flex" }}>
       <CssBaseline />
       <AppBar
         position="fixed"
@@ -86,12 +86,13 @@ const DashboardLayout = () => {
             aria-label="open drawer"
             edge="start"
             onClick={handleDrawerToggle}
-            sx={{ mr: 2, display: { sm: 'none' } }}
+            sx={{ mr: 2, display: { sm: "none" } }}
           >
             <MenuIcon />
           </IconButton>
           <Typography variant="h6" noWrap component="div">
-            {menuItems.find(item => item.path === location.pathname)?.text || 'Dashboard'}
+            {menuItems.find((item) => item.path === location.pathname)?.text ||
+              "Dashboard"}
           </Typography>
         </Toolbar>
       </AppBar>
@@ -100,14 +101,17 @@ const DashboardLayout = () => {
         sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
       >
         <Drawer
-          variant={isMobile ? 'temporary' : 'permanent'}
+          variant={isMobile ? "temporary" : "permanent"}
           open={mobileOpen}
           onClose={handleDrawerToggle}
           ModalProps={{
             keepMounted: true,
           }}
           sx={{
-            '& .MuiDrawer-paper': { boxSizing: 'border-box', width: drawerWidth },
+            "& .MuiDrawer-paper": {
+              boxSizing: "border-box",
+              width: drawerWidth,
+            },
           }}
         >
           {drawer}
@@ -119,7 +123,7 @@ const DashboardLayout = () => {
           flexGrow: 1,
           p: 3,
           width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: '64px',
+          mt: "64px",
         }}
       >
         <Outlet />
@@ -128,4 +132,4 @@ const DashboardLayout = () => {
   );
 };
 
-export default DashboardLayout; 
+export default DashboardLayout;

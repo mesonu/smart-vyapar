@@ -1,6 +1,6 @@
-import React from 'react';
-import { Box, Typography, Paper, Grid } from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+import React from "react";
+import { Box, Typography, Paper, Grid } from "@mui/material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Dashboard: React.FC = () => {
   const { user } = useAuth();
@@ -36,4 +36,4 @@ const Dashboard: React.FC = () => {
   );
 };
 
-export default Dashboard; 
+export default Dashboard;

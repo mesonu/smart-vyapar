@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Container,
@@ -9,17 +9,17 @@ import {
   Grid,
   Avatar,
   IconButton,
-} from '@mui/material';
-import { PhotoCamera } from '@mui/icons-material';
-import { useAuth } from '../contexts/AuthContext';
+} from "@mui/material";
+import { PhotoCamera } from "@mui/icons-material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Profile: React.FC = () => {
   const { user, updateProfile } = useAuth();
   const [formData, setFormData] = useState({
-    name: user?.name || '',
-    email: user?.email || '',
-    phone: user?.phone || '',
-    address: user?.address || '',
+    name: user?.name || "",
+    email: user?.email || "",
+    phone: user?.phone || "",
+    address: user?.address || "",
   });
   const [isEditing, setIsEditing] = useState(false);
 
@@ -34,7 +34,7 @@ const Profile: React.FC = () => {
       await updateProfile(formData);
       setIsEditing(false);
     } catch (error) {
-      console.error('Failed to update profile:', error);
+      console.error("Failed to update profile:", error);
     }
   };
 
@@ -46,9 +46,9 @@ const Profile: React.FC = () => {
         </Typography>
         <Paper elevation={3} sx={{ p: 4 }}>
           <Grid container spacing={4}>
-            <Grid item xs={12} md={4} sx={{ textAlign: 'center' }}>
+            <Grid item xs={12} md={4} sx={{ textAlign: "center" }}>
               <Avatar
-                sx={{ width: 120, height: 120, margin: '0 auto 16px' }}
+                sx={{ width: 120, height: 120, margin: "0 auto 16px" }}
                 src={user?.avatar}
               >
                 {user?.name?.[0]?.toUpperCase()}
@@ -109,7 +109,7 @@ const Profile: React.FC = () => {
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <Box sx={{ display: 'flex', gap: 2 }}>
+                    <Box sx={{ display: "flex", gap: 2 }}>
                       {!isEditing ? (
                         <Button
                           variant="contained"
@@ -147,4 +147,4 @@ const Profile: React.FC = () => {
   );
 };
 
-export default Profile; 
+export default Profile;

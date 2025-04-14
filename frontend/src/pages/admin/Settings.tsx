@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState } from "react";
 import {
   Box,
   Container,
@@ -14,8 +14,8 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-} from '@mui/material';
-import { useAuth } from '../contexts/AuthContext';
+} from "@mui/material";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Settings: React.FC = () => {
   const { user } = useAuth();
@@ -23,8 +23,8 @@ const Settings: React.FC = () => {
     notifications: true,
     emailNotifications: true,
     darkMode: false,
-    language: 'en',
-    timezone: 'UTC',
+    language: "en",
+    timezone: "UTC",
   });
 
   const handleToggle = (setting: string) => {
@@ -64,7 +64,7 @@ const Settings: React.FC = () => {
                   control={
                     <Switch
                       checked={settings.notifications}
-                      onChange={() => handleToggle('notifications')}
+                      onChange={() => handleToggle("notifications")}
                     />
                   }
                   label="Enable Notifications"
@@ -73,7 +73,7 @@ const Settings: React.FC = () => {
                   control={
                     <Switch
                       checked={settings.emailNotifications}
-                      onChange={() => handleToggle('emailNotifications')}
+                      onChange={() => handleToggle("emailNotifications")}
                     />
                   }
                   label="Email Notifications"
@@ -92,7 +92,7 @@ const Settings: React.FC = () => {
                   control={
                     <Switch
                       checked={settings.darkMode}
-                      onChange={() => handleToggle('darkMode')}
+                      onChange={() => handleToggle("darkMode")}
                     />
                   }
                   label="Dark Mode"
@@ -144,12 +144,8 @@ const Settings: React.FC = () => {
               </Grid>
 
               <Grid item xs={12}>
-                <Box sx={{ display: 'flex', justifyContent: 'flex-end' }}>
-                  <Button
-                    type="submit"
-                    variant="contained"
-                    color="primary"
-                  >
+                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
+                  <Button type="submit" variant="contained" color="primary">
                     Save Settings
                   </Button>
                 </Box>
@@ -162,4 +158,4 @@ const Settings: React.FC = () => {
   );
 };
 
-export default Settings; 
+export default Settings;

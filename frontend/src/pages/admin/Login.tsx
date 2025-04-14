@@ -1,13 +1,20 @@
-import React, { useState } from 'react';
-import { Box, TextField, Button, Typography, Container, Paper } from '@mui/material';
-import { useNavigate } from 'react-router-dom';
-import authService from '../services/authService';
-import { useAuth } from '../contexts/AuthContext';
+import React, { useState } from "react";
+import {
+  Box,
+  TextField,
+  Button,
+  Typography,
+  Container,
+  Paper,
+} from "@mui/material";
+import { useNavigate } from "react-router-dom";
+import authService from "../../services/authService";
+import { useAuth } from "../../contexts/AuthContext";
 
 const Login: React.FC = () => {
-  const [email, setEmail] = useState('');
-  const [password, setPassword] = useState('');
-  const [error, setError] = useState('');
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState("");
   const navigate = useNavigate();
   const { login } = useAuth();
 
@@ -15,9 +22,9 @@ const Login: React.FC = () => {
     e.preventDefault();
     try {
       await login(email, password);
-      navigate('/');
+      navigate("/");
     } catch (err) {
-      setError('Invalid email or password');
+      setError("Invalid email or password");
     }
   };
 
@@ -70,4 +77,4 @@ const Login: React.FC = () => {
   );
 };
 
-export default Login; 
+export default Login;
