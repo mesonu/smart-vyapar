@@ -1,9 +1,11 @@
 const { logger } = require("../utils/logger");
 const ResponseHandler = require("../utils/ResponseHandler");
 const { Op } = require("sequelize");
-
+const config = require("../config/config");
+const jwt = require("jsonwebtoken");
 class BaseController {
   constructor() {
+    this.config = config;
     this.ResponseHandler = ResponseHandler;
     this.errorMappings = {
       // Validation Errors
@@ -44,6 +46,19 @@ class BaseController {
       ServiceUnavailableError: (res, error) =>
         this.ResponseHandler.serviceUnavailable(res, error.message),
     };
+  }
+
+  /**
+   * Generate a JWT token for a user
+   * @param {Object} user - User object
+   * @returns {string} JWT token
+   */
+  generateToken(user) {
+    return jwt.sign(
+      { id: user.id, email: user.email, role: user.role },
+      this.config.jwt.secret,
+      { expiresIn: this.config.jwt.expiresIn }
+    );
   }
 
   /**

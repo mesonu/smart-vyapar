@@ -2,18 +2,28 @@ import axios from 'axios';
 
 const API_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000/api';
 
-interface LoginResponse {
-  token: string;
-  user: {
-    id: string;
-    name: string;
-    email: string;
-    role: string;
-    avatar?: string;
-    phone?: string;
-    address?: string;
-  };
+interface User {
+  id: string;
+  name: string;
+  email: string;
+  role: string;
+  avatar?: string;
+  phone?: string;
+  address?: string;
 }
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+interface LoginData {
+  user: User;
+  token: string;
+}
+
+type LoginResponse = ApiResponse<LoginData>;
 
 interface RegisterData {
   name: string;
@@ -43,12 +53,12 @@ const authService = {
     await axios.post(`${API_URL}/auth/logout`);
   },
 
-  async getProfile(): Promise<LoginResponse['user']> {
+  async getProfile(): Promise<User> {
     const response = await axios.get(`${API_URL}/auth/profile`);
     return response.data;
   },
 
-  async updateProfile(userData: UpdateProfileData): Promise<LoginResponse['user']> {
+  async updateProfile(userData: Partial<User>): Promise<User> {
     const response = await axios.put(`${API_URL}/auth/profile`, userData);
     return response.data;
   },

@@ -5,9 +5,9 @@ const bcrypt = require("bcryptjs");
 const jwt = require("jsonwebtoken");
 const { Op } = require("sequelize");
 const crypto = require("crypto");
-const twilio = require("twilio");
+// const twilio = require("twilio");
 const nodemailer = require("nodemailer");
-const { ResponseHandler } = require("../utils/ResponseHandler");
+const ResponseHandler  = require("../utils/ResponseHandler");
 const userRepository = require("../repositories/UserRepository");
 // const { sendSMS } = require('../services/twilioService');
 const { sendEmail } = require("../services/emailService");
@@ -44,71 +44,48 @@ class AuthController extends BaseController {
         address,
       } = req.body;
 
-      console.log("request body=====>", req.body);
-
       // Check if user already exists
       const existingUser = await userRepository.findByEmail(email);
       if (existingUser) {
-        return this.error(res, "Email already registered", 400);
+        return ResponseHandler.badRequest(res, "Email already registered");
       }
 
-      // Hash password
-      const hashedPassword = await bcrypt.hash(password, 10);
-
-      // Create user
+      // Create user with active status - password will be hashed by model hooks
       const user = await userRepository.create({
         name,
         email,
-        password: hashedPassword,
-        role,
+        password, // Password hashing is handled by model hooks
+        role: role || 'user',
         phone,
         businessName,
         businessType,
         gstNumber,
         address,
-      });
+        status: 'active'
+      }, { raw: false }); // Ensure we get back a Sequelize instance
 
       // Generate token
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "24h" }
-      );
-
-      // TODO: Send welcome email
-      // await sendEmail({
-      //   to: email,
-      //   subject: "Welcome to SmartVyapar",
-      //   text: `Welcome ${name}! Your account has been created successfully.`,
-      // });
-
-      // TODO: Send welcome SMS
-      // await sendSMS({
-      //   to: phone,
-      //   body: `Welcome to SmartVyapar! Your account has been created successfully.`,
-      // });
+      const token = this.generateToken(user);
 
       logger.info("User registered successfully", { userId: user.id });
 
-      return this.success(
-        res,
-        {
-          user: {
-            id: user.id,
-            name: user.name,
-            email: user.email,
-            phone: user.phone,
-            role: user.role,
-            businessName: user.businessName,
-            businessType: user.businessType,
-            gstNumber: user.gstNumber,
-            address: user.address,
-          },
-          token,
+      return ResponseHandler.success(res, {
+        user: {
+          id: user.id,
+          name: user.name,
+          email: user.email,
+          phone: user.phone,
+          role: user.role,
+          businessName: user.businessName,
+          businessType: user.businessType,
+          gstNumber: user.gstNumber,
+          address: user.address,
+          status: user.status
         },
-        "Registration successful"
-      );
+        token
+      }, "Registration successful");
     } catch (error) {
+      logger.error("Registration error:", error);
       return this.handleError(res, error, "Failed to register user");
     }
   }
@@ -118,38 +95,33 @@ class AuthController extends BaseController {
       const { email, password } = req.body;
 
       // Find user
-      const user = await userRepository.findByEmail(email, {
-        attributes: { exclude: ["password"] },
-      });
-
+      const user = await userRepository.findByEmail(email);
+      
       if (!user) {
         return ResponseHandler.notFound(res, "User not found");
       }
 
-      // Verify password
-      const isValidPassword = await bcrypt.compare(password, user.password);
+      // Verify password using instance method
+      const isValidPassword = await user.validatePassword(password);
+      
       if (!isValidPassword) {
         return ResponseHandler.unauthorized(res, "Invalid credentials");
       }
 
-      // Check user status
-      if (user.status !== "active") {
+      // Check user status using instance method
+      if (user.get('status') !== "active") {
         return ResponseHandler.forbidden(res, "Account is not active");
       }
 
       // Generate token
-      const token = jwt.sign(
-        { id: user.id, email: user.email, role: user.role },
-        process.env.JWT_SECRET,
-        { expiresIn: "24h" }
-      );
+      const token = this.generateToken(user);
 
       // Update last login
       await userRepository.updateLastLogin(user.id);
 
       logger.info("User logged in successfully", { userId: user.id });
 
-      return ResponseHandler.success(res, "Login successful", {
+      return ResponseHandler.success(res, {
         user: {
           id: user.id,
           name: user.name,
@@ -159,8 +131,8 @@ class AuthController extends BaseController {
           businessName: user.businessName,
           businessType: user.businessType,
         },
-        token,
-      });
+        token
+      }, "Login successful");
     } catch (error) {
       logger.error("Login error:", error);
       return this.handleError(res, error, "Login failed");
@@ -473,18 +445,6 @@ class AuthController extends BaseController {
     } catch (error) {
       return this.handleError(res, error);
     }
-  }
-
-  generateToken(user) {
-    return jwt.sign(
-      {
-        id: user.id,
-        email: user.email,
-        role: user.role,
-      },
-      process.env.JWT_SECRET,
-      { expiresIn: "24h" }
-    );
   }
 
   sanitizeUser(user) {

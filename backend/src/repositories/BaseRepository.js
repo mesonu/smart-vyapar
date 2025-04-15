@@ -20,7 +20,7 @@ class BaseRepository {
         order = [['createdAt', 'DESC']],
         limit = 10,
         offset = 0,
-        raw = true
+        raw = false
       } = options;
 
       const result = await this.model.findAll({
@@ -51,7 +51,7 @@ class BaseRepository {
         where = {},
         attributes = null,
         include = [],
-        raw = true
+        raw = false
       } = options;
 
       const result = await this.model.findOne({
@@ -79,7 +79,7 @@ class BaseRepository {
       const {
         attributes = null,
         include = [],
-        raw = true
+        raw = false
       } = options;
 
       const result = await this.model.findByPk(id, {
@@ -103,7 +103,7 @@ class BaseRepository {
    */
   async create(data, options = {}) {
     try {
-      const { raw = true } = options;
+      const { raw = false } = options;
       const result = await this.model.create(data, { raw });
       return result;
     } catch (error) {
@@ -120,10 +120,11 @@ class BaseRepository {
    */
   async update(data, options = {}) {
     try {
-      const { where = {}, returning = true } = options;
+      const { where = {}, returning = true, raw = false } = options;
       const [affectedCount, affectedRows] = await this.model.update(data, {
         where,
-        returning
+        returning,
+        raw
       });
       return { affectedCount, affectedRows };
     } catch (error) {
@@ -178,7 +179,7 @@ class BaseRepository {
         order = [['createdAt', 'DESC']],
         page = 1,
         limit = 10,
-        raw = true
+        raw = false
       } = options;
 
       const offset = (page - 1) * limit;
@@ -198,7 +199,7 @@ class BaseRepository {
         pagination: {
           total: count,
           page,
-          limit,
+          pageSize: limit,
           totalPages: Math.ceil(count / limit)
         }
       };

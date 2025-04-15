@@ -6,16 +6,33 @@ interface User {
   name: string;
   email: string;
   role: string;
-  avatar?: string;
+  password?: string;
   phone?: string;
   address?: string;
+  businessName?:string;
+  businessType?:string;
+  gstNumber?:string;
 }
+
+interface ApiResponse<T> {
+  success: boolean;
+  message: string;
+  data: T;
+}
+
+interface LoginData {
+  user: User;
+  token: string;
+}
+
+interface LoginResponse extends ApiResponse<LoginData> {}
 
 interface AuthContextType {
   user: User | null;
   loading: boolean;
   error: string | null;
-  login: (email: string, password: string) => Promise<void>;
+  setUser: (user: User | null) => void;
+  login: (email: string, password: string) => Promise<LoginResponse>;
   logout: () => Promise<void>;
   register: (userData: { name: string; email: string; password: string }) => Promise<void>;
   updateProfile: (userData: Partial<User>) => Promise<void>;
@@ -51,11 +68,11 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     try {
       setLoading(true);
       setError(null);
-      const { token, user } = await authService.login(email, password);
-      localStorage.setItem('token', token);
-      setUser(user);
+      const response = await authService.login(email, password);
+      localStorage.setItem('token', response.data.token);
+      setUser(response.data.user);
+      return response;
     } catch (err) {
-      setError('Invalid email or password');
       throw err;
     } finally {
       setLoading(false);
@@ -105,6 +122,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
   const value = {
     user,
+    setUser,
     loading,
     error,
     login,

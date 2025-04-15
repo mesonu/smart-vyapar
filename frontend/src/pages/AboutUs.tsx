@@ -112,7 +112,7 @@ const AboutUs = () => {
         {/* Story Section */}
         <Container maxWidth="lg" sx={{ py: 8 }}>
           <Grid container spacing={6} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs:12, sm:6}}>
               <Typography variant="h3" gutterBottom sx={{ fontWeight: 700 }}>
                 Our Story
               </Typography>
@@ -137,7 +137,7 @@ const AboutUs = () => {
                 success.
               </Typography>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs:12, sm:6}}>
               <Box
                 component="img"
                 src="https://placehold.co/600x400/1976d2/white?text=Our+Journey"
@@ -157,7 +157,7 @@ const AboutUs = () => {
         <Box sx={{ bgcolor: "#f8f9fa", py: 8 }}>
           <Container maxWidth="lg">
             <Grid container spacing={6}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs:12, sm:6}}>
                 <Paper
                   elevation={0}
                   sx={{ p: 4, height: "100%", borderRadius: 4 }}
@@ -180,7 +180,7 @@ const AboutUs = () => {
                   </Typography>
                 </Paper>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs:12, sm:6}}>
                 <Paper
                   elevation={0}
                   sx={{ p: 4, height: "100%", borderRadius: 4 }}
@@ -226,7 +226,7 @@ const AboutUs = () => {
           </Typography>
           <Grid container spacing={4}>
             {values.map((value, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
+              <Grid size={{xs:12, sm:6, md: 3}}  key={index}>
                 <Paper
                   elevation={0}
                   sx={{
@@ -277,7 +277,7 @@ const AboutUs = () => {
             </Typography>
             <Grid container spacing={4}>
               {teamMembers.map((member, index) => (
-                <Grid item xs={12} sm={6} md={3} key={index}>
+                <Grid size={{xs:12, sm:6, md: 3}} key={index}>
                   <Paper
                     elevation={0}
                     sx={{

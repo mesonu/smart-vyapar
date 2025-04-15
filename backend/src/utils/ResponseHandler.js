@@ -33,6 +33,7 @@ class ResponseHandler {
   }
 
   static unauthorized(res, message = "Unauthorized access") {
+    console.log("unauthorized=====>", message);
     return this.error(res, message, 401);
   }
 

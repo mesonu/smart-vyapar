@@ -18,7 +18,7 @@ class UserRepository extends BaseRepository {
       const {
         attributes = null,
         include = [],
-        raw = true
+        raw = false
       } = options;
 
       return await this.findOne({
@@ -44,7 +44,7 @@ class UserRepository extends BaseRepository {
       const {
         attributes = null,
         include = [],
-        raw = true
+        raw = false
       } = options;
 
       return await this.findOne({
@@ -126,7 +126,7 @@ class UserRepository extends BaseRepository {
         order = [['createdAt', 'DESC']],
         limit = 10,
         offset = 0,
-        raw = true
+        raw = false
       } = options;
 
       return await this.findAll({
@@ -157,7 +157,7 @@ class UserRepository extends BaseRepository {
         order = [['createdAt', 'DESC']],
         limit = 10,
         offset = 0,
-        raw = true
+        raw = false
       } = options;
 
       return await this.findAll({
