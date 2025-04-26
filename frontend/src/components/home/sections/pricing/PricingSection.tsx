@@ -36,7 +36,7 @@ const PricingSection: React.FC<PricingSectionProps> = ({
       </Typography>
       <Grid container spacing={4} alignItems="stretch">
         {plans.map((plan, index) => (
-          <Grid item xs={12} md={4} key={index}>
+          <Grid size={{xs:12, md:4}} key={index}>
             <PricingCard plan={plan} />
           </Grid>
         ))}

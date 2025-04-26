@@ -260,7 +260,7 @@ const LandingPage: React.FC = () => {
           }}
         >
           <Grid container spacing={6} alignItems="center">
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs:12, md:6}}>
               <Box sx={{ position: "relative", zIndex: 1 }}>
                 <Typography
                   variant="h1"
@@ -347,7 +347,7 @@ const LandingPage: React.FC = () => {
                 </Stack>
               </Box>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs:12, md:6}}>
               <Box
                 sx={{
                   position: "relative",
@@ -440,7 +440,7 @@ const LandingPage: React.FC = () => {
           </Typography>
           <Grid container spacing={4} sx={{ mt: 4 }}>
             {stats.map((stat, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
+              <Grid size={{xs:12, sm:6, md:3}} key={index}>
                 <Paper
                   elevation={0}
                   sx={{
@@ -531,7 +531,7 @@ const LandingPage: React.FC = () => {
           </Typography>
           <Grid container spacing={4}>
             {features.map((feature, index) => (
-              <Grid item xs={12} sm={6} md={4} key={index}>
+              <Grid size={{xs:12, sm:6, md:4}} key={index}>
                 <Card
                   sx={{
                     height: "100%",
@@ -615,7 +615,7 @@ const LandingPage: React.FC = () => {
             Why Choose Us?
           </Typography>
           <Grid container spacing={6}>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs:12, md:6}}>
               <Paper
                 elevation={0}
                 sx={{
@@ -695,7 +695,7 @@ const LandingPage: React.FC = () => {
                 </List>
               </Paper>
             </Grid>
-            <Grid item xs={12} md={6}>
+            <Grid size={{xs:12, md:6}}>
               <Paper
                 elevation={0}
                 sx={{
@@ -823,7 +823,7 @@ const LandingPage: React.FC = () => {
           </Typography>
           <Grid container spacing={4}>
             {testimonials.map((testimonial, index) => (
-              <Grid item xs={12} md={4} key={index}>
+              <Grid size={{xs:12, md:4}} key={index}>
                 <Card
                   sx={{
                     height: "100%",
@@ -943,7 +943,7 @@ const LandingPage: React.FC = () => {
                 icon: "https://placehold.co/64x64/1976d2/white?text=CRM",
               },
             ].map((partner, index) => (
-              <Grid item xs={6} sm={3} key={index}>
+              <Grid size={{xs:6, sm:3}} key={index}>
                 <Paper
                   elevation={0}
                   sx={{
@@ -1041,7 +1041,7 @@ const LandingPage: React.FC = () => {
                 organization: "Industry Leaders",
               },
             ].map((achievement, index) => (
-              <Grid item xs={12} md={4} key={index}>
+              <Grid size={{xs:12, md:4}} key={index}>
                 <Paper
                   elevation={0}
                   sx={{
