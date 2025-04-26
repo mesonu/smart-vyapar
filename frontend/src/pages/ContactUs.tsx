@@ -133,7 +133,7 @@ const ContactUs = () => {
         <Container maxWidth="lg" sx={{ py: 8 }}>
           <Grid container spacing={4}>
             {contactInfo.map((info, index) => (
-              <Grid item xs={12} sm={6} md={3} key={index}>
+              <Grid size={{xs:12, sm:6, md:3}} key={index}>
                 <Paper
                   elevation={0}
                   sx={{
@@ -175,7 +175,7 @@ const ContactUs = () => {
         <Box sx={{ bgcolor: "#f8f9fa", py: 8 }}>
           <Container maxWidth="lg">
             <Grid container spacing={6}>
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs:12, md:6}}>
                 <Typography variant="h3" gutterBottom sx={{ fontWeight: 700 }}>
                   Get in Touch
                 </Typography>
@@ -253,7 +253,7 @@ const ContactUs = () => {
                   </Button>
                 </Box>
               </Grid>
-              <Grid item xs={12} md={6}>
+              <Grid size={{xs:12, md:6}}>
                 <Box
                   sx={{
                     width: "100%",
