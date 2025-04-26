@@ -13,9 +13,11 @@ import {
   FormControl,
   InputLabel,
   FormHelperText,
+  Alert,
 } from '@mui/material';
-import { useAuth } from '../../contexts/AuthContext';
-import authService  from '../../services/authService';
+import { useDispatch, useSelector } from 'react-redux';
+import { RootState } from '../../store';
+import { register } from '../../store/slices/authSlice';
 import { toast } from 'react-toastify';
 
 interface SignupFormData {
@@ -31,7 +33,6 @@ interface SignupFormData {
 }
 
 const Signup: React.FC = () => {
-  const navigate = useNavigate();
   const [formData, setFormData] = useState<SignupFormData>({
     name: '',
     email: '',
@@ -43,8 +44,10 @@ const Signup: React.FC = () => {
     gstNumber: '',
     address: '',
   });
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Partial<SignupFormData>>({});
+  const [error, setError] = useState('');
+  const navigate = useNavigate();
+  const dispatch = useDispatch();
+  const { loading } = useSelector((state: RootState) => state.auth);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | { name?: string; value: unknown }>) => {
     const { name, value } = e.target;
@@ -53,11 +56,8 @@ const Signup: React.FC = () => {
       [name as string]: value,
     }));
     // Clear error when user starts typing
-    if (errors[name as keyof SignupFormData]) {
-      setErrors(prev => ({
-        ...prev,
-        [name as string]: '',
-      }));
+    if (error && error.includes(name as string)) {
+      setError('');
     }
   };
 
@@ -75,182 +75,180 @@ const Signup: React.FC = () => {
     if (!formData.businessType) newErrors.businessType = 'Business type is required';
     if (!formData.address) newErrors.address = 'Business address is required';
 
-    setErrors(newErrors);
-    return Object.keys(newErrors).length === 0;
+    if (Object.keys(newErrors).length > 0) {
+      setError(Object.values(newErrors).join('\n'));
+      return false;
+    }
+    return true;
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!validateForm()) return;
 
-    setLoading(true);
     try {
-      await authService.register(formData);
+      await dispatch(register(formData)).unwrap();
       toast.success('Registration successful! Please login.');
       navigate('/dashboard');
-    } catch (error: any) {
-      toast.error(error.response?.data?.message || 'Registration failed');
-    } finally {
-      setLoading(false);
+    } catch (err: any) {
+      setError(err.message || 'Registration failed');
     }
   };
 
   return (
-    <Container component="main" maxWidth="sm">
-      <Box
+    <Box
+      sx={{
+        minHeight: '100vh',
+        display: 'flex',
+        alignItems: 'center',
+        justifyContent: 'center',
+        bgcolor: 'background.default',
+      }}
+    >
+      <Paper
+        elevation={3}
         sx={{
-          marginTop: 8,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
+          p: 4,
+          width: '100%',
+          maxWidth: 400,
         }}
       >
-        <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
-          <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Create Your Account
-          </Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 3 }}>
-            <Grid container spacing={2}>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Full Name"
-                  name="name"
-                  value={formData.name}
-                  onChange={handleChange}
-                  error={!!errors.name}
-                  helperText={errors.name}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Email Address"
-                  name="email"
-                  type="email"
-                  value={formData.email}
-                  onChange={handleChange}
-                  error={!!errors.email}
-                  helperText={errors.email}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Phone Number"
-                  name="phone"
-                  value={formData.phone}
-                  onChange={handleChange}
-                  error={!!errors.phone}
-                  helperText={errors.phone}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Business Name"
-                  name="businessName"
-                  value={formData.businessName}
-                  onChange={handleChange}
-                  error={!!errors.businessName}
-                  helperText={errors.businessName}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <FormControl fullWidth required error={!!errors.businessType}>
-                  <InputLabel>Business Type</InputLabel>
-                  <Select
-                    name="businessType"
-                    value={formData.businessType}
-                    onChange={handleChange}
-                    label="Business Type"
-                  >
-                    <MenuItem value="retail">Retail</MenuItem>
-                    <MenuItem value="wholesale">Wholesale</MenuItem>
-                    <MenuItem value="manufacturing">Manufacturing</MenuItem>
-                    <MenuItem value="service">Service</MenuItem>
-                  </Select>
-                  {errors.businessType && (
-                    <FormHelperText>{errors.businessType}</FormHelperText>
-                  )}
-                </FormControl>
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  fullWidth
-                  label="GST Number"
-                  name="gstNumber"
-                  value={formData.gstNumber}
-                  onChange={handleChange}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  multiline
-                  rows={4}
-                  label="Business Address"
-                  name="address"
-                  value={formData.address}
-                  onChange={handleChange}
-                  error={!!errors.address}
-                  helperText={errors.address}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Password"
-                  name="password"
-                  type="password"
-                  value={formData.password}
-                  onChange={handleChange}
-                  error={!!errors.password}
-                  helperText={errors.password}
-                />
-              </Grid>
-              <Grid size={{xs:12 }}>
-                <TextField
-                  required
-                  fullWidth
-                  label="Confirm Password"
-                  name="confirmPassword"
-                  type="password"
-                  value={formData.confirmPassword}
-                  onChange={handleChange}
-                  error={!!errors.confirmPassword}
-                  helperText={errors.confirmPassword}
-                />
-              </Grid>
+        <Typography variant="h4" align="center" gutterBottom>
+          Sign Up
+        </Typography>
+        {error && (
+          <Alert severity="error" sx={{ mb: 2 }}>
+            {error}
+          </Alert>
+        )}
+        <form onSubmit={handleSubmit}>
+          <Grid container spacing={2}>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Name"
+                name="name"
+                value={formData.name}
+                onChange={handleChange}
+                required
+              />
             </Grid>
-            <Button
-              type="submit"
-              fullWidth
-              variant="contained"
-              sx={{ mt: 3, mb: 2 }}
-              disabled={loading}
-            >
-              {loading ? 'Registering...' : 'Register'}
-            </Button>
-            <Grid container justifyContent="flex-end">
-              <Grid size={{xs:12 }}>
-                <Link to="/login" style={{ textDecoration: 'none' }}>
-                  <Typography variant="body2" color="primary">
-                    Already have an account? Sign in
-                  </Typography>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Email"
+                name="email"
+                type="email"
+                value={formData.email}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Phone Number"
+                name="phone"
+                value={formData.phone}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Business Name"
+                name="businessName"
+                value={formData.businessName}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <FormControl fullWidth required error={!!error && error.includes('businessType')}>
+                <InputLabel>Business Type</InputLabel>
+                <Select
+                  name="businessType"
+                  value={formData.businessType}
+                  onChange={handleChange}
+                  label="Business Type"
+                >
+                  <MenuItem value="retail">Retail</MenuItem>
+                  <MenuItem value="wholesale">Wholesale</MenuItem>
+                  <MenuItem value="manufacturing">Manufacturing</MenuItem>
+                  <MenuItem value="service">Service</MenuItem>
+                </Select>
+              </FormControl>
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="GST Number"
+                name="gstNumber"
+                value={formData.gstNumber}
+                onChange={handleChange}
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Business Address"
+                name="address"
+                value={formData.address}
+                onChange={handleChange}
+                multiline
+                rows={4}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Password"
+                name="password"
+                type="password"
+                value={formData.password}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <TextField
+                fullWidth
+                label="Confirm Password"
+                name="confirmPassword"
+                type="password"
+                value={formData.confirmPassword}
+                onChange={handleChange}
+                required
+              />
+            </Grid>
+            <Grid item xs={12}>
+              <Button
+                fullWidth
+                variant="contained"
+                type="submit"
+                disabled={loading}
+              >
+                {loading ? 'Signing up...' : 'Sign Up'}
+              </Button>
+            </Grid>
+            <Grid item xs={12}>
+              <Typography align="center">
+                Already have an account?{' '}
+                <Link
+                  component="button"
+                  variant="body2"
+                  onClick={() => navigate('/login')}
+                >
+                  Sign in
                 </Link>
-              </Grid>
+              </Typography>
             </Grid>
-          </Box>
-        </Paper>
-      </Box>
-    </Container>
+          </Grid>
+        </form>
+      </Paper>
+    </Box>
   );
 };
 

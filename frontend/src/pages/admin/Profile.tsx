@@ -4,37 +4,44 @@ import {
   Container,
   Typography,
   Paper,
-  TextField,
-  Button,
   Grid,
   Avatar,
-  IconButton,
+  Button,
+  TextField,
+  InputLabel,
 } from "@mui/material";
 import { PhotoCamera } from "@mui/icons-material";
-import { useAuth } from "../../contexts/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
+import { AppDispatch } from "../../store";
+import { updateProfile } from "../../store/slices/authSlice";
 
 const Profile: React.FC = () => {
-  const { user, updateProfile } = useAuth();
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, loading, error } = useSelector((state: RootState) => state.auth);
+  
   const [formData, setFormData] = useState({
-    name: user?.name || "",
-    email: user?.email || "",
-    phone: user?.phone || "",
-    address: user?.address || "",
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
+    avatar: user?.avatar || '',
   });
-  const [isEditing, setIsEditing] = useState(false);
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setFormData((prev) => ({ ...prev, [name]: value }));
+    setFormData(prev => ({
+      ...prev,
+      [name]: value
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      await updateProfile(formData);
-      setIsEditing(false);
-    } catch (error) {
-      console.error("Failed to update profile:", error);
+      await dispatch(updateProfile(formData)).unwrap();
+    } catch (err) {
+      // Error is handled by the auth slice
     }
   };
 
@@ -44,98 +51,101 @@ const Profile: React.FC = () => {
         <Typography variant="h4" gutterBottom>
           Profile
         </Typography>
+        
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
+
         <Paper elevation={3} sx={{ p: 4 }}>
           <Grid container spacing={4}>
-            <Grid item xs={12} md={4} sx={{ textAlign: "center" }}>
+            <Grid item xs={12} alignContent="center" textAlign="center">
               <Avatar
-                sx={{ width: 120, height: 120, margin: "0 auto 16px" }}
-                src={user?.avatar}
+                src={formData.avatar}
+                sx={{ width: 120, height: 120, margin: '0 auto' }}
+              />
+              <Button
+                variant="contained"
+                component="label"
+                startIcon={<PhotoCamera />}
+                sx={{ mt: 2 }}
               >
-                {user?.name?.[0]?.toUpperCase()}
-              </Avatar>
-              <IconButton color="primary" component="label">
-                <input hidden accept="image/*" type="file" />
-                <PhotoCamera />
-              </IconButton>
-              <Typography variant="h6" sx={{ mt: 2 }}>
-                {user?.name}
-              </Typography>
-              <Typography color="textSecondary">{user?.email}</Typography>
+                Upload Photo
+                <input
+                  type="file"
+                  hidden
+                  accept="image/*"
+                  onChange={(e) => {
+                    const file = e.target.files?.[0];
+                    if (file) {
+                      const reader = new FileReader();
+                      reader.onloadend = () => {
+                        setFormData(prev => ({
+                          ...prev,
+                          avatar: reader.result as string
+                        }));
+                      };
+                      reader.readAsDataURL(file);
+                    }
+                  }}
+                />
+              </Button>
             </Grid>
-            <Grid item xs={12} md={8}>
+
+            <Grid item xs={12}>
               <form onSubmit={handleSubmit}>
                 <Grid container spacing={3}>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
+                    <InputLabel>Full Name</InputLabel>
                     <TextField
                       fullWidth
-                      label="Name"
                       name="name"
                       value={formData.name}
                       onChange={handleChange}
-                      disabled={!isEditing}
+                      margin="normal"
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
+                    <InputLabel>Email</InputLabel>
                     <TextField
                       fullWidth
-                      label="Email"
                       name="email"
                       type="email"
                       value={formData.email}
                       onChange={handleChange}
-                      disabled={!isEditing}
+                      margin="normal"
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
+                    <InputLabel>Phone</InputLabel>
                     <TextField
                       fullWidth
-                      label="Phone"
                       name="phone"
                       value={formData.phone}
                       onChange={handleChange}
-                      disabled={!isEditing}
+                      margin="normal"
                     />
                   </Grid>
-                  <Grid item xs={12}>
+                  <Grid item xs={12} sm={6}>
+                    <InputLabel>Address</InputLabel>
                     <TextField
                       fullWidth
-                      label="Address"
                       name="address"
-                      multiline
-                      rows={4}
                       value={formData.address}
                       onChange={handleChange}
-                      disabled={!isEditing}
+                      margin="normal"
                     />
                   </Grid>
                   <Grid item xs={12}>
-                    <Box sx={{ display: "flex", gap: 2 }}>
-                      {!isEditing ? (
-                        <Button
-                          variant="contained"
-                          color="primary"
-                          onClick={() => setIsEditing(true)}
-                        >
-                          Edit Profile
-                        </Button>
-                      ) : (
-                        <>
-                          <Button
-                            type="submit"
-                            variant="contained"
-                            color="primary"
-                          >
-                            Save Changes
-                          </Button>
-                          <Button
-                            variant="outlined"
-                            onClick={() => setIsEditing(false)}
-                          >
-                            Cancel
-                          </Button>
-                        </>
-                      )}
-                    </Box>
+                    <Button
+                      type="submit"
+                      variant="contained"
+                      color="primary"
+                      disabled={loading}
+                    >
+                      {loading ? 'Saving...' : 'Save Changes'}
+                    </Button>
                   </Grid>
                 </Grid>
               </form>

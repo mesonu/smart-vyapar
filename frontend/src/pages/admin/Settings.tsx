@@ -15,140 +15,103 @@ import {
   FormControl,
   InputLabel,
 } from "@mui/material";
-import { useAuth } from "../../contexts/AuthContext";
+import { useDispatch, useSelector } from "react-redux";
+import { RootState } from "../../store";
+import { AppDispatch } from "../../store";
+import { updateProfile } from "../../store/slices/authSlice";
 
 const Settings: React.FC = () => {
-  const { user } = useAuth();
-  const [settings, setSettings] = useState({
-    notifications: true,
-    emailNotifications: true,
-    darkMode: false,
-    language: "en",
-    timezone: "UTC",
+  const dispatch = useDispatch<AppDispatch>();
+  const { user, loading, error } = useSelector((state: RootState) => state.auth);
+  
+  const [formData, setFormData] = useState({
+    name: user?.name || '',
+    email: user?.email || '',
+    phone: user?.phone || '',
+    address: user?.address || '',
   });
-
-  const handleToggle = (setting: string) => {
-    setSettings((prev) => ({
-      ...prev,
-      [setting]: !prev[setting as keyof typeof prev],
-    }));
-  };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const { name, value } = e.target;
-    setSettings((prev) => ({
+    setFormData(prev => ({
       ...prev,
-      [name]: value,
+      [name]: value
     }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // TODO: Implement settings update logic
+    try {
+      await dispatch(updateProfile(formData)).unwrap();
+    } catch (err) {
+      // Error is handled by the auth slice
+    }
   };
 
   return (
     <Container maxWidth="md">
       <Box sx={{ mt: 4, mb: 4 }}>
         <Typography variant="h4" gutterBottom>
-          Settings
+          Profile Settings
         </Typography>
+        {error && (
+          <Typography color="error" sx={{ mb: 2 }}>
+            {error}
+          </Typography>
+        )}
         <Paper elevation={3} sx={{ p: 4 }}>
           <form onSubmit={handleSubmit}>
             <Grid container spacing={4}>
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Notifications
-                </Typography>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.notifications}
-                      onChange={() => handleToggle("notifications")}
-                    />
-                  }
-                  label="Enable Notifications"
-                />
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.emailNotifications}
-                      onChange={() => handleToggle("emailNotifications")}
-                    />
-                  }
-                  label="Email Notifications"
+              <Grid item xs={12} sm={6}>
+                <InputLabel>Full Name</InputLabel>
+                <TextField
+                  fullWidth
+                  name="name"
+                  value={formData.name}
+                  onChange={handleChange}
+                  margin="normal"
                 />
               </Grid>
-
-              <Grid item xs={12}>
-                <Divider />
-              </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Appearance
-                </Typography>
-                <FormControlLabel
-                  control={
-                    <Switch
-                      checked={settings.darkMode}
-                      onChange={() => handleToggle("darkMode")}
-                    />
-                  }
-                  label="Dark Mode"
+              <Grid item xs={12} sm={6}>
+                <InputLabel>Email</InputLabel>
+                <TextField
+                  fullWidth
+                  name="email"
+                  type="email"
+                  value={formData.email}
+                  onChange={handleChange}
+                  margin="normal"
                 />
               </Grid>
-
-              <Grid item xs={12}>
-                <Divider />
+              <Grid item xs={12} sm={6}>
+                <InputLabel>Phone</InputLabel>
+                <TextField
+                  fullWidth
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  margin="normal"
+                />
               </Grid>
-
-              <Grid item xs={12}>
-                <Typography variant="h6" gutterBottom>
-                  Preferences
-                </Typography>
-                <Grid container spacing={3}>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Language</InputLabel>
-                      <Select
-                        name="language"
-                        value={settings.language}
-                        onChange={handleChange}
-                        label="Language"
-                      >
-                        <MenuItem value="en">English</MenuItem>
-                        <MenuItem value="es">Spanish</MenuItem>
-                        <MenuItem value="fr">French</MenuItem>
-                        <MenuItem value="de">German</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                  <Grid item xs={12} sm={6}>
-                    <FormControl fullWidth>
-                      <InputLabel>Timezone</InputLabel>
-                      <Select
-                        name="timezone"
-                        value={settings.timezone}
-                        onChange={handleChange}
-                        label="Timezone"
-                      >
-                        <MenuItem value="UTC">UTC</MenuItem>
-                        <MenuItem value="EST">Eastern Time</MenuItem>
-                        <MenuItem value="PST">Pacific Time</MenuItem>
-                        <MenuItem value="IST">Indian Standard Time</MenuItem>
-                      </Select>
-                    </FormControl>
-                  </Grid>
-                </Grid>
+              <Grid item xs={12} sm={6}>
+                <InputLabel>Address</InputLabel>
+                <TextField
+                  fullWidth
+                  name="address"
+                  value={formData.address}
+                  onChange={handleChange}
+                  margin="normal"
+                />
               </Grid>
-
               <Grid item xs={12}>
-                <Box sx={{ display: "flex", justifyContent: "flex-end" }}>
-                  <Button type="submit" variant="contained" color="primary">
-                    Save Settings
-                  </Button>
-                </Box>
+                <Button
+                  type="submit"
+                  variant="contained"
+                  color="primary"
+                  disabled={loading}
+                >
+                  {loading ? 'Saving...' : 'Save Changes'}
+                </Button>
               </Grid>
             </Grid>
           </form>

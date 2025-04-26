@@ -1,39 +1,37 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
+import { Link as RouterLink } from 'react-router-dom';
 import {
-  Container,
   Box,
-  Typography,
-  TextField,
   Button,
+  TextField,
+  Typography,
+  Container,
   Paper,
+  Link,
+  Alert,
 } from '@mui/material';
-import authService from '../../services/authService';
-import { toast } from 'react-toastify';
+import { useDispatch, useSelector } from 'react-redux';
+import { forgotPassword } from '../../store/slices/authSlice';
+import { RootState } from '../../store';
+import { AppDispatch } from '../../store';
 
 const ForgotPassword: React.FC = () => {
+  const dispatch = useDispatch<AppDispatch>();
+  const { error, loading, message } = useSelector((state: RootState) => state.auth);
+  
   const [email, setEmail] = useState('');
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setError('');
-    setLoading(true);
-
     try {
-      await authService.forgotPassword(email);
-      toast.success('Password reset link sent to your email');
-    } catch (error: any) {
-      setError(error.response?.data?.message || 'Failed to send reset link');
-      toast.error(error.response?.data?.message || 'Failed to send reset link');
-    } finally {
-      setLoading(false);
+      await dispatch(forgotPassword(email)).unwrap();
+    } catch (err) {
+      // Error is handled by the auth slice
     }
   };
 
   return (
-    <Container component="main" maxWidth="sm">
+    <Container component="main" maxWidth="xs">
       <Box
         sx={{
           marginTop: 8,
@@ -44,12 +42,22 @@ const ForgotPassword: React.FC = () => {
       >
         <Paper elevation={3} sx={{ p: 4, width: '100%' }}>
           <Typography component="h1" variant="h5" align="center" gutterBottom>
-            Forgot Password
+            Admin Forgot Password
           </Typography>
-          <Typography variant="body1" align="center" sx={{ mb: 3 }}>
-            Enter your email address and we'll send you a link to reset your password.
-          </Typography>
-          <Box component="form" onSubmit={handleSubmit} sx={{ mt: 1 }}>
+          
+          {error && (
+            <Alert severity="error" sx={{ mb: 2 }}>
+              {error}
+            </Alert>
+          )}
+
+          {message && (
+            <Alert severity="success" sx={{ mb: 2 }}>
+              {message}
+            </Alert>
+          )}
+
+          <Box component="form" onSubmit={handleSubmit} noValidate>
             <TextField
               margin="normal"
               required
@@ -61,8 +69,6 @@ const ForgotPassword: React.FC = () => {
               autoFocus
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              error={!!error}
-              helperText={error}
             />
             <Button
               type="submit"
@@ -74,10 +80,8 @@ const ForgotPassword: React.FC = () => {
               {loading ? 'Sending...' : 'Send Reset Link'}
             </Button>
             <Box sx={{ textAlign: 'center' }}>
-              <Link to="/login" style={{ textDecoration: 'none' }}>
-                <Typography variant="body2" color="primary">
-                  Back to Login
-                </Typography>
+              <Link component={RouterLink} to="/admin/login" variant="body2">
+                Back to Login
               </Link>
             </Box>
           </Box>

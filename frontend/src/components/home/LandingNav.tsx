@@ -175,7 +175,7 @@ const LandingNav = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => navigate('/login')}
+                onClick={() => navigate('/admin/login')}
                 sx={{
                   ml: 2,
                   px: 3,
