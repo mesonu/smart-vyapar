@@ -1,9 +1,7 @@
 import React, { useState } from "react";
-import { styled } from "@mui/material/styles";
 import { Outlet, useNavigate, useLocation } from "react-router-dom";
 import {
   Box,
-  CssBaseline,
   AppBar,
   Toolbar,
   Typography,
@@ -14,12 +12,14 @@ import {
   ListItemButton,
   ListItemIcon,
   ListItemText,
-  useTheme,
-  useMediaQuery,
   Avatar,
   Menu,
   MenuItem,
   Divider,
+  useTheme,
+  useMediaQuery,
+  Badge,
+  Stack,
 } from "@mui/material";
 import {
   Menu as MenuIcon,
@@ -30,24 +30,26 @@ import {
   Settings as SettingsIcon,
   Inventory as InventoryIcon,
   ShoppingCart as ShoppingCartIcon,
-  Store as StoreIcon,
+  Receipt as ReceiptIcon,
+  AccountBalance as AccountBalanceIcon,
   Notifications as NotificationsIcon,
   Help as HelpIcon,
   Logout as LogoutIcon,
 } from "@mui/icons-material";
-import { useDispatch, useSelector } from 'react-redux';
+import { useDispatch, useSelector } from "react-redux";
 import type { AppDispatch } from "../../store";
 import { RootState } from "../../store";
 import { logout } from "../../store/slices/auth/authSlice";
+import Footer from '../common/Footer';
 
-const drawerWidth = 240;
+const drawerWidth = 280;
 
 const DashboardLayout = () => {
   const [mobileOpen, setMobileOpen] = useState(false);
   const [open, setOpen] = useState(true);
   const [anchorEl, setAnchorEl] = useState<null | HTMLElement>(null);
   const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
+  const isMobile = useMediaQuery(theme.breakpoints.down("md"));
   const navigate = useNavigate();
   const location = useLocation();
   const dispatch = useDispatch<AppDispatch>();
@@ -82,31 +84,54 @@ const DashboardLayout = () => {
     { text: "Dashboard", icon: <DashboardIcon />, path: "/dashboard" },
     { text: "Inventory", icon: <InventoryIcon />, path: "/dashboard/inventory" },
     { text: "Products", icon: <ShoppingCartIcon />, path: "/dashboard/products" },
-    { text: "Orders", icon: <ShoppingCartIcon />, path: "/dashboard/orders" },
+    { text: "Orders", icon: <ReceiptIcon />, path: "/dashboard/orders" },
     { text: "Customers", icon: <PeopleIcon />, path: "/dashboard/customers" },
+    { text: "Billing", icon: <AccountBalanceIcon />, path: "/dashboard/billing" },
+    { text: "GST", icon: <AccountBalanceIcon />, path: "/dashboard/gst" },
     { text: "Users", icon: <PeopleIcon />, path: "/dashboard/users" },
-    { text: "Notifications", icon: <NotificationsIcon />, path: "/dashboard/notifications" },
     { text: "Settings", icon: <SettingsIcon />, path: "/dashboard/settings" },
-    { text: "Help", icon: <HelpIcon />, path: "/dashboard/help" },
   ];
 
   const drawer = (
     <Box sx={{ width: drawerWidth }}>
-      <Toolbar>
-        <Typography variant="h6" noWrap component="div">
+      <Toolbar sx={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', px: 2 }}>
+        <Typography variant="h6" noWrap component="div" sx={{ fontWeight: 700, color: 'primary.main' }}>
           SmartVaypar
         </Typography>
+        {!isMobile && (
+          <IconButton onClick={handleDrawerClose}>
+            <ChevronLeftIcon />
+          </IconButton>
+        )}
       </Toolbar>
+      <Divider />
       <List>
         {menuItems.map((item) => (
-          <ListItem
-            button
-            key={item.text}
-            onClick={() => navigate(item.path)}
-            selected={location.pathname === item.path}
-          >
-            <ListItemIcon>{item.icon}</ListItemIcon>
-            <ListItemText primary={item.text} />
+          <ListItem key={item.text} disablePadding>
+            <ListItemButton
+              selected={location.pathname === item.path}
+              onClick={() => navigate(item.path)}
+              sx={{
+                minHeight: 48,
+                px: 2.5,
+                '&.Mui-selected': {
+                  backgroundColor: 'primary.light',
+                  '&:hover': {
+                    backgroundColor: 'primary.light',
+                  },
+                },
+              }}
+            >
+              <ListItemIcon sx={{ minWidth: 40, color: location.pathname === item.path ? 'primary.main' : 'inherit' }}>
+                {item.icon}
+              </ListItemIcon>
+              <ListItemText 
+                primary={item.text} 
+                primaryTypographyProps={{
+                  fontWeight: location.pathname === item.path ? 600 : 400,
+                }}
+              />
+            </ListItemButton>
           </ListItem>
         ))}
       </List>
@@ -114,14 +139,16 @@ const DashboardLayout = () => {
   );
 
   return (
-    <Box sx={{ display: "flex" }}>
-      <CssBaseline />
-      <AppBar
-        position="fixed"
-        sx={{
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          ml: { sm: `${drawerWidth}px` },
-          zIndex: (theme) => theme.zIndex.drawer + 1,
+    <Box sx={{ display: 'flex', flexDirection: 'column', minHeight: '100vh' }}>
+      <AppBar 
+        position="fixed" 
+        sx={{ 
+          zIndex: theme.zIndex.drawer + 1,
+          backgroundColor: 'background.paper',
+          color: 'text.primary',
+          boxShadow: 'none',
+          borderBottom: '1px solid',
+          borderColor: 'divider',
         }}
       >
         <Toolbar>
@@ -129,15 +156,33 @@ const DashboardLayout = () => {
             color="inherit"
             aria-label="open drawer"
             edge="start"
-            onClick={handleDrawerOpen}
-            sx={{ mr: 2, display: { sm: "none" }, ...(open && { display: 'none' }) }}
+            onClick={handleDrawerToggle}
+            sx={{ mr: 2, display: { sm: 'none' } }}
           >
             <MenuIcon />
           </IconButton>
-          <Typography variant="h6" noWrap component="div" sx={{ flexGrow: 1 }}>
-            Smart Vayapar
-          </Typography>
-          <div>
+          <Box sx={{ display: 'flex', alignItems: 'center', flexGrow: 1 }}>
+            <Box
+              component="img"
+              src="/logo.png"
+              alt="SmartShop Logo"
+              sx={{ height: 40, mr: 2 }}
+            />
+            <Typography
+              variant="h6"
+              noWrap
+              component="div"
+              sx={{ fontWeight: 700, color: 'primary.main' }}
+            >
+              SmartShop
+            </Typography>
+          </Box>
+          <Stack direction="row" spacing={2} alignItems="center">
+            <IconButton color="inherit">
+              <Badge badgeContent={4} color="error">
+                <NotificationsIcon />
+              </Badge>
+            </IconButton>
             <IconButton
               size="large"
               aria-label="account of current user"
@@ -146,13 +191,13 @@ const DashboardLayout = () => {
               onClick={handleMenu}
               color="inherit"
             >
-              <Avatar alt={user?.name} src={user?.avatar} />
+              <Avatar alt={user?.name} src={user?.avatar} sx={{ width: 32, height: 32 }} />
             </IconButton>
             <Menu
               id="menu-appbar"
               anchorEl={anchorEl}
               anchorOrigin={{
-                vertical: 'top',
+                vertical: 'bottom',
                 horizontal: 'right',
               }}
               keepMounted
@@ -162,6 +207,14 @@ const DashboardLayout = () => {
               }}
               open={Boolean(anchorEl)}
               onClose={handleClose}
+              slotProps={{
+                paper: {
+                  sx: {
+                    mt: 1.5,
+                    minWidth: 180,
+                  }
+                }
+              }}
             >
               <MenuItem onClick={() => { handleClose(); navigate('/dashboard/profile'); }}>
                 <ListItemIcon>
@@ -169,6 +222,13 @@ const DashboardLayout = () => {
                 </ListItemIcon>
                 Profile
               </MenuItem>
+              <MenuItem onClick={() => { handleClose(); navigate('/dashboard/settings'); }}>
+                <ListItemIcon>
+                  <SettingsIcon fontSize="small" />
+                </ListItemIcon>
+                Settings
+              </MenuItem>
+              <Divider />
               <MenuItem onClick={handleLogout}>
                 <ListItemIcon>
                   <LogoutIcon fontSize="small" />
@@ -176,56 +236,51 @@ const DashboardLayout = () => {
                 Logout
               </MenuItem>
             </Menu>
-          </div>
+          </Stack>
         </Toolbar>
       </AppBar>
-      <Box
-        component="nav"
-        sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
-      >
-        <Drawer
-          variant={isMobile ? "temporary" : "permanent"}
-          open={mobileOpen || open}
-          onClose={handleDrawerToggle}
-          ModalProps={{
-            keepMounted: true,
-          }}
+      <Box sx={{ display: 'flex', flex: 1 }}>
+        <Box
+          component="nav"
+          sx={{ width: { sm: drawerWidth }, flexShrink: { sm: 0 } }}
+        >
+          <Drawer
+            variant={isMobile ? "temporary" : "permanent"}
+            open={isMobile ? mobileOpen : open}
+            onClose={handleDrawerToggle}
+            ModalProps={{
+              keepMounted: true,
+            }}
+            sx={{
+              '& .MuiDrawer-paper': {
+                boxSizing: 'border-box',
+                width: drawerWidth,
+                borderRight: '1px solid',
+                borderColor: 'divider',
+              },
+            }}
+          >
+            {drawer}
+          </Drawer>
+        </Box>
+        <Box
+          component="main"
           sx={{
-            "& .MuiDrawer-paper": {
-              boxSizing: "border-box",
-              width: drawerWidth,
-            },
+            flexGrow: 1,
+            p: 3,
+            width: { sm: `calc(100% - ${drawerWidth}px)` },
+            backgroundColor: 'background.default',
+            minHeight: '100vh',
+            display: 'flex',
+            flexDirection: 'column',
           }}
         >
           <Toolbar />
-          <Box sx={{ overflow: 'auto' }}>
-            <List>
-              {menuItems.map((item) => (
-                <ListItem key={item.text} disablePadding>
-                  <ListItemButton
-                    selected={location.pathname === item.path}
-                    onClick={() => navigate(item.path)}
-                  >
-                    <ListItemIcon>{item.icon}</ListItemIcon>
-                    <ListItemText primary={item.text} />
-                  </ListItemButton>
-                </ListItem>
-              ))}
-            </List>
+          <Box sx={{ flex: 1 }}>
+            <Outlet />
           </Box>
-        </Drawer>
-      </Box>
-      <Box
-        component="main"
-        sx={{
-          flexGrow: 1,
-          p: 3,
-          width: { sm: `calc(100% - ${drawerWidth}px)` },
-          mt: "64px",
-        }}
-      >
-        <Toolbar />
-        <Outlet />
+          <Footer />
+        </Box>
       </Box>
     </Box>
   );
