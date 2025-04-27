@@ -1,6 +1,6 @@
 import { createSlice, createAsyncThunk } from '@reduxjs/toolkit';
-import { AuthState, LoginCredentials, RegisterData, AuthResponse, UpdateProfileData } from '../../types/auth';
-import authService from '../../services/authService';
+import { AuthState, LoginCredentials, RegisterData, AuthResponse, UpdateProfileData } from '../../../types/auth';
+import authService from '../../../services/authService';
 
 // Get initial state from localStorage
 const getInitialState = (): AuthState => {

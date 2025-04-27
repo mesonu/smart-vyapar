@@ -37,9 +37,9 @@ import {
   Check as CheckIcon,
 } from "@mui/icons-material";
 import { useNavigate } from "react-router-dom";
-import LandingNav from "../components/home/LandingNav";
-import LandingFooter from "../components/home/LandingFooter";
-import PricingSection from "../components/home/sections/pricing/PricingSection";
+import LandingNav from "../../../components/public/LandingNav";
+import LandingFooter from "../../../components/public/LandingFooter";
+import PricingSection from "../../../components/public/sections/pricing/PricingSection";
 
 const pricingPlans = [
   {

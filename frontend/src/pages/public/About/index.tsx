@@ -15,8 +15,8 @@ import {
   People as PeopleIcon,
   EmojiObjects as EmojiObjectsIcon,
 } from "@mui/icons-material";
-import LandingNav from "../components/home/LandingNav";
-import LandingFooter from "../components/home/LandingFooter";
+import LandingNav from "../../../components/public/LandingNav";
+import LandingFooter from "../../../components/public/LandingFooter";
 
 const AboutUs = () => {
   const teamMembers = [

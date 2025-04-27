@@ -17,7 +17,7 @@ import {
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState } from '../../store';
-import { register } from '../../store/slices/authSlice';
+import { register } from '../../store/slices/auth/authSlice';
 import { toast } from 'react-toastify';
 
 interface SignupFormData {

@@ -16,8 +16,8 @@ import {
   LocationOn as LocationIcon,
   AccessTime as AccessTimeIcon,
 } from "@mui/icons-material";
-import LandingNav from "../components/home/LandingNav";
-import LandingFooter from "../components/home/LandingFooter";
+import LandingNav from "../../../components/public/LandingNav";
+import LandingFooter from "../../../components/public/LandingFooter";
 
 const ContactUs = () => {
   const [formData, setFormData] = useState({

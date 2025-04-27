@@ -63,7 +63,7 @@ const LandingNav = () => {
         {navigationItems.map((item) => (
           <React.Fragment key={item.title}>
             <ListItem 
-              button 
+              component="button" 
               onClick={() => {
                 if (!item.hasDropdown) {
                   navigate(item.path);
@@ -75,7 +75,7 @@ const LandingNav = () => {
             </ListItem>
             {item.hasDropdown && services.map((service) => (
               <ListItem 
-                button 
+                component="button" 
                 key={service.title}
                 sx={{ pl: 4 }}
                 onClick={() => {
@@ -145,8 +145,10 @@ const LandingNav = () => {
                         anchorEl={servicesAnchorEl}
                         open={Boolean(servicesAnchorEl)}
                         onClose={handleServicesClose}
-                        MenuListProps={{
-                          'aria-labelledby': 'services-button',
+                        slotProps={{
+                          paper: {
+                            'aria-labelledby': 'services-button'
+                          }
                         }}
                       >
                         {services.map((service) => (
@@ -175,7 +177,7 @@ const LandingNav = () => {
               <Button
                 variant="contained"
                 color="primary"
-                onClick={() => navigate('/admin/login')}
+                onClick={() => navigate('/login')}
                 sx={{
                   ml: 2,
                   px: 3,

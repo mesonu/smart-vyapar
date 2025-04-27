@@ -11,7 +11,7 @@ import {
   Alert,
 } from '@mui/material';
 import { useDispatch, useSelector } from 'react-redux';
-import { forgotPassword } from '../../store/slices/authSlice';
+import { forgotPassword } from '../../store/slices/auth/authSlice';
 import { RootState } from '../../store';
 import { AppDispatch } from '../../store';
 

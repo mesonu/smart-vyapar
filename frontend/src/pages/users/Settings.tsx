@@ -18,7 +18,7 @@ import {
 import { useDispatch, useSelector } from "react-redux";
 import { RootState } from "../../store";
 import { AppDispatch } from "../../store";
-import { updateProfile } from "../../store/slices/authSlice";
+import { updateProfile } from "../../store/slices/auth/authSlice";
 
 const Settings: React.FC = () => {
   const dispatch = useDispatch<AppDispatch>();

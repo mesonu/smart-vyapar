@@ -1,6 +1,6 @@
 import { useDispatch, useSelector } from 'react-redux';
 import { RootState, AppDispatch } from '../store';
-import { login, register, logout, refreshToken } from '../store/slices/authSlice';
+import { login, register, logout, refreshToken } from '../store/slices/auth/authSlice';
 
 export const useAuth = () => {
   const dispatch = useDispatch<AppDispatch>();

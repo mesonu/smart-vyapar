@@ -27,8 +27,8 @@ import {
 import { useNavigate } from "react-router-dom";
 import { Outlet } from "react-router-dom";
 import { useDispatch, useSelector } from "react-redux";
-import { RootState } from "../../../store";
-import { logout } from "../../../store/slices/authSlice";
+import { RootState } from "../../store";
+import { logout } from "../../store/slices/auth/authSlice";
 
 const drawerWidth = 240;
 
